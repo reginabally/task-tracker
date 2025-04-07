@@ -1,0 +1,69 @@
+# .cursorrules
+
+## Expertise and Guidelines
+You are an expert in TypeScript, Next.js App Router, React, and Tailwind CSS. Always follow the official Next.js 14 App Router documentation (https://nextjs.org/docs) for Data Fetching, Rendering, and Routing. Refer to the Tailwind CSS documentation (https://tailwindcss.com/docs) for CSS styling.
+
+## Project Structure and Organization
+- **All project files are saved in the `/src` folder.**
+  - **src/app:** Contains the core Next.js files such as `page.tsx` and `layout.tsx`.
+  - **src/app/components:** Contains all React components.
+  - **src/app/lib:** Contains auxiliary code such as helpers, hooks, and context providers.
+
+### Suggested File/Folder Structure (per the project plan)
+- **/app/tasks:**
+  - `page.tsx` → Main task page that includes both the entry form and task list.
+  - `actions.ts` → Contains database actions like `addTask` and `fetchTasks`.
+  - `report.ts` → Logic for generating task reports.
+  - `summary.ts` → Integration file for LM Studio AI summaries.
+- **/lib:**
+  - `prisma.ts` → Initializes the Prisma client.
+  - `utils.ts` → Provides helper functions for grouping and formatting data.
+- **/components:**
+  - `TaskForm.tsx` → Form to add new tasks with fields such as description, type, tags, date, and link.
+  - `TaskList.tsx` → Displays and filters existing tasks.
+  - `ReportView.tsx` → Generates HTML/text reports grouped by task type and tag.
+  - `SummaryGenerator.tsx` → Handles local AI integration using LM Studio.
+- For global styling, make sure to use `/src/app/globals.css` for Tailwind CSS.
+
+## Data Model and Backend Logic
+- **Database & Data Model:**
+  - Use Prisma for database interactions.
+  - **Task Model:** Contains fields like `id`, `description`, `type`, `date`, `link`, and `createdAt`, with associations to tags.
+  - **Tag Model:** Defines unique tag names and relationships to tasks.
+  - **TaskTag Model:** Acts as a junction table for many-to-many relationships between tasks and tags.
+  
+- **Backend Functions:**
+  - `addTask(task)` – Adds a new task to the database.
+  - `getTasks(fromDate, toDate)` – Retrieves tasks within a specific date range.
+  - `generateReportHTML(tasks)` – Generates an HTML or text report by grouping tasks by type and tag.
+  - `groupByTypeAndTag(tasks)` – Organizes tasks for clear reporting.
+
+## Core UI and Functionality
+- **Task Entry Form (`<TaskForm />`):**
+  - Includes fields for `description`, `type`, `tags`, `date`, and `link`.
+  - On submission, it calls the `addTask()` function to store the task.
+- **Task List (`<TaskList />`):**
+  - Displays tasks with filtering options by type, date, and tag.
+  - May include functionalities for task deletion and editing.
+- **Report View (`<ReportView />`):**
+  - Generates a formatted report (HTML or text) grouping tasks by type and tag.
+  - Can include export functionality (e.g., exporting as `.txt` or Markdown).
+
+## LM Studio AI Integration
+- **Local AI-Powered Summaries:**
+  - LM Studio is integrated to generate local AI summaries.
+  - It runs on a local HTTP server at `http://localhost:1234/v1/chat/completions`.
+  - The summary function should construct a prompt that includes task descriptions and requests a concise, HR-ready summary.
+  - **Example Prompt:**  
+    _"You are a helpful assistant summarizing work activity for an HR feedback report. Here are the work activities: [list tasks]. Generate a short HR-ready summary."_
+  - Recommended models include Mistral 7B, Hermes 2, or LLaMA 3—choose the one that best suits your machine’s performance and resource availability.
+
+## Additional Guidelines and Enhancements
+- **Coding Best Practices:**
+  - Adhere to TypeScript and Next.js conventions.
+  - Write clean, modular, and maintainable code.
+- **Optional Enhancements:**
+  - Implement task editing and deletion.
+  - Add export functionality for reports (e.g., as `.txt` or Markdown).
+  - Consider UI improvements such as a date picker (e.g., `react-datepicker`) and a model selection interface for LM Studio.
+  - Use Git for version control with frequent commits and backup the database file if using SQLite.
