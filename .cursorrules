@@ -9,7 +9,7 @@ You are an expert in TypeScript, Next.js App Router, React, and Tailwind CSS. Al
   - **src/app/components:** Contains all React components.
   - **src/app/lib:** Contains auxiliary code such as helpers, hooks, and context providers.
 
-### Suggested File/Folder Structure (per the project plan)
+### Suggested File/Folder Structure
 - **/app/tasks:**
   - `page.tsx` → Main task page that includes both the entry form and task list.
   - `actions.ts` → Contains database actions like `addTask` and `fetchTasks`.
