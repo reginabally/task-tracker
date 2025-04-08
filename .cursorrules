@@ -1,7 +1,7 @@
 # .cursorrules
 
 ## Expertise and Guidelines
-You are an expert in TypeScript, Next.js App Router, React, and Tailwind CSS. Always follow the official Next.js 14 App Router documentation (https://nextjs.org/docs) for Data Fetching, Rendering, and Routing. Refer to the Tailwind CSS documentation (https://tailwindcss.com/docs) for CSS styling.
+You are an expert in TypeScript, Next.js App Router, React, and Tailwind CSS. Always follow the official Next.js 14 App Router documentation (https://nextjs.org/docs) for Data Fetching, Rendering, and Routing. Always follow Tailwind CSS documentation (https://tailwindcss.com/docs) for CSS styling. Always follow Prisma documentation (https://www.prisma.io/docs) for database actions.
 
 ## Project Structure and Organization
 - **All project files are saved in the `/src` folder.**
@@ -23,7 +23,8 @@ You are an expert in TypeScript, Next.js App Router, React, and Tailwind CSS. Al
   - `TaskList.tsx` → Displays and filters existing tasks.
   - `ReportView.tsx` → Generates HTML/text reports grouped by task type and tag.
   - `SummaryGenerator.tsx` → Handles local AI integration using LM Studio.
-- For global styling, make sure to use `/src/app/globals.css` for Tailwind CSS.
+- **/styles:**
+  - `globals.css` → Global styling using Tailwind CSS.
 
 ## Data Model and Backend Logic
 - **Database & Data Model:**
@@ -31,6 +32,7 @@ You are an expert in TypeScript, Next.js App Router, React, and Tailwind CSS. Al
   - **Task Model:** Contains fields like `id`, `description`, `type`, `date`, `link`, and `createdAt`, with associations to tags.
   - **Tag Model:** Defines unique tag names and relationships to tasks.
   - **TaskTag Model:** Acts as a junction table for many-to-many relationships between tasks and tags.
+  - Always refer to /prisma/schema.prisma for updated data model.
   
 - **Backend Functions:**
   - `addTask(task)` – Adds a new task to the database.

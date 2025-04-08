@@ -1,22 +1,24 @@
 'use client';
 
-import { useState, KeyboardEvent } from 'react';
+import { useState, KeyboardEvent, useEffect } from 'react';
+import { getAllTags } from '@/app/tasks/actions';
 
-const TASK_TYPES = [
-  "Slack Ping",
-  "P2 Activity",
-  "Project Work",
-  "Tool/Workflow Improvement",
-  "Learning",
-  "Personal",
-  "Others"
-] as const;
+// Define the TaskType enum based on the schema
+type TaskType = 'MANUAL_REVIEW_WORK' | 'COMMUNICATION' | 'PROJECT' | 'LEARNING' | 'DOCUMENTATION' | 'OTHERS';
 
-type TaskType = typeof TASK_TYPES[number];
+// Map enum values to display names
+const TASK_TYPE_DISPLAY_NAMES: Record<TaskType, string> = {
+  MANUAL_REVIEW_WORK: 'Manual Review Work',
+  COMMUNICATION: 'Communication',
+  PROJECT: 'Project',
+  LEARNING: 'Learning',
+  DOCUMENTATION: 'Documentation',
+  OTHERS: 'Others'
+};
 
 interface TaskFormData {
   description: string;
-  type: TaskType;
+  type: TaskType | "";
   tags: string[];
   date: string;
   link: string;
@@ -25,13 +27,42 @@ interface TaskFormData {
 export default function TaskForm() {
   const [formData, setFormData] = useState<TaskFormData>({
     description: '',
-    type: TASK_TYPES[0],
+    type: '',
     tags: [],
     date: new Date().toISOString().split('T')[0],
     link: ''
   });
   
   const [tagInput, setTagInput] = useState('');
+  const [allTags, setAllTags] = useState<string[]>([]);
+  const [matchingTags, setMatchingTags] = useState<string[]>([]);
+
+  // Fetch all tags on component mount
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const tags = await getAllTags();
+        setAllTags(tags);
+      } catch (error) {
+        console.error('Failed to fetch tags:', error);
+      }
+    };
+    fetchTags();
+  }, []);
+
+  // Update matching tags when tagInput changes
+  useEffect(() => {
+    if (tagInput.trim()) {
+      const matches = allTags
+        .filter(tag => 
+          tag.toLowerCase().includes(tagInput.toLowerCase()) &&
+          !formData.tags.includes(tag)
+        );
+      setMatchingTags(matches);
+    } else {
+      setMatchingTags([]);
+    }
+  }, [tagInput, allTags, formData.tags]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -58,7 +89,19 @@ export default function TaskForm() {
       }
       
       setTagInput('');
+      setMatchingTags([]);
     }
+  };
+
+  const addTag = (tag: string) => {
+    if (!formData.tags.includes(tag)) {
+      setFormData(prev => ({
+        ...prev,
+        tags: [...prev.tags, tag]
+      }));
+    }
+    setTagInput('');
+    setMatchingTags([]);
   };
 
   const removeTag = (tagToRemove: string) => {
@@ -101,9 +144,10 @@ export default function TaskForm() {
           onChange={handleInputChange}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2.5 text-base text-gray-900"
         >
-          {TASK_TYPES.map(type => (
-            <option key={type} value={type}>
-              {type}
+          <option value="">Choose Task Type</option>
+          {Object.entries(TASK_TYPE_DISPLAY_NAMES).map(([value, displayName]) => (
+            <option key={value} value={value}>
+              {displayName}
             </option>
           ))}
         </select>
@@ -131,15 +175,32 @@ export default function TaskForm() {
               </div>
             ))}
           </div>
-          <input
-            type="text"
-            id="tags"
-            value={tagInput}
-            onChange={handleTagInputChange}
-            onKeyDown={handleTagKeyDown}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2.5 text-base text-gray-900 placeholder-gray-500"
-            placeholder="Type a tag and press Enter"
-          />
+          <div className="relative">
+            <input
+              type="text"
+              id="tags"
+              value={tagInput}
+              onChange={handleTagInputChange}
+              onKeyDown={handleTagKeyDown}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2.5 text-base text-gray-900 placeholder-gray-500"
+              placeholder="Type a tag and press Enter"
+            />
+            {matchingTags.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 bg-white rounded-md shadow-lg">
+                <ul className="max-h-60 overflow-auto py-1">
+                  {matchingTags.map(tag => (
+                    <li
+                      key={tag}
+                      onClick={() => addTag(tag)}
+                      className="px-4 py-2 text-sm text-gray-700 hover:bg-indigo-100 cursor-pointer"
+                    >
+                      {tag}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
