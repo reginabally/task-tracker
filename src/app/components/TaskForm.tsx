@@ -2,6 +2,9 @@
 
 import { useEffect, useState, KeyboardEvent, useRef } from 'react';
 import { getAllTags, getAllTaskTypes, addTask } from '@/app/tasks/actions';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { useTaskContext } from '@/app/lib/TaskContext';
 
 interface TaskType {
   name: string;
@@ -14,11 +17,12 @@ interface Tag {
 }
 
 export default function TaskForm() {
+  const { triggerRefresh } = useTaskContext();
   const [formData, setFormData] = useState({
     description: '',
     type: '',
     tags: [] as string[],
-    date: new Date().toISOString().split('T')[0],
+    date: new Date(),
     link: ''
   });
 
@@ -72,6 +76,12 @@ export default function TaskForm() {
   ) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleDateChange = (date: Date | null) => {
+    if (date) {
+      setFormData(prev => ({ ...prev, date }));
+    }
   };
 
   const handleTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -150,15 +160,37 @@ export default function TaskForm() {
     setError(null);
     
     try {
-      await addTask(formData);
+      // Check if the task has only a Slack link and a date
+      const isSlackLink = formData.link.startsWith('https://a8c.slack.com');
+      const hasOnlySlackLinkAndDate = isSlackLink && 
+                                     formData.description.trim() === '' && 
+                                     formData.type === '' && 
+                                     formData.tags.length === 0;
+      
+      // Create a copy of formData to avoid modifying the state directly
+      const taskData = { ...formData };
+      
+      // If it's a Slack link with only date, set type and tag automatically
+      if (hasOnlySlackLinkAndDate) {
+        taskData.type = 'MANUAL_REVIEW_WORK';
+        taskData.tags = ['slack-ping'];
+      }
+      
+      await addTask({
+        ...taskData,
+        date: taskData.date.toISOString().split('T')[0]
+      });
+      
       // Reset form after successful submission
       setFormData({
         description: '',
         type: '',
         tags: [],
-        date: new Date().toISOString().split('T')[0],
+        date: new Date(),
         link: ''
       });
+      // Trigger refresh of the task list
+      triggerRefresh();
       alert('Task added successfully!');
     } catch (err) {
       console.error('Error adding task:', err);
@@ -192,7 +224,6 @@ export default function TaskForm() {
             name="description"
             value={formData.description}
             onChange={handleInputChange}
-            required
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
             disabled={isLoading}
           />
@@ -207,7 +238,6 @@ export default function TaskForm() {
             name="type"
             value={formData.type}
             onChange={handleInputChange}
-            required
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
             disabled={isLoading || taskTypes.length === 0}
           >
@@ -280,15 +310,14 @@ export default function TaskForm() {
           <label htmlFor="date" className="block text-sm font-medium text-gray-800 mb-1">
             Date
           </label>
-          <input
-            type="date"
+          <DatePicker
             id="date"
-            name="date"
-            value={formData.date}
-            onChange={handleInputChange}
-            required
+            selected={formData.date}
+            onChange={handleDateChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+            dateFormat="MMM d, yyyy"
             disabled={isLoading}
+            required
           />
         </div>
         

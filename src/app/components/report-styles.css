@@ -1,0 +1,56 @@
+/* Report content styling */
+.report-content {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+}
+
+.report-content h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  color: #111;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.5rem;
+}
+
+.report-content h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1.25rem;
+  margin-bottom: 0.75rem;
+  color: #333;
+}
+
+.report-content ul {
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+  list-style-type: disc;
+}
+
+.report-content li {
+  margin-bottom: 0.25rem;
+  line-height: 1.5;
+}
+
+.report-content a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.report-content a:hover {
+  text-decoration: underline;
+}
+
+/* First h2 shouldn't have top margin */
+.report-content h2:first-child {
+  margin-top: 0;
+}
+
+/* Proper white-space handling for line breaks */
+.report-content {
+  white-space: pre-wrap;
+} 

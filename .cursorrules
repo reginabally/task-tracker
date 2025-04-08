@@ -11,16 +11,16 @@ You are an expert in TypeScript, Next.js App Router, React, and Tailwind CSS. Al
 
 ### Suggested File/Folder Structure
 - **/app/tasks:**
-  - `page.tsx` → Main task page that includes both the entry form and task list.
-  - `actions.ts` → Contains database actions like `addTask` and `fetchTasks`.
+  - `page.tsx` → Main task page that includes both the task entry form (`<TaskForm />`) and task list (`<TaskList />`). This combined design supports real-time feedback, reduces context switching, and improves the batch entry experience.
+  - `actions.ts` → Contains database actions like `addTask`, `fetchTasks`, `updateTask`, and `deleteTask`.
   - `report.ts` → Logic for generating task reports.
   - `summary.ts` → Integration file for LM Studio AI summaries.
 - **/lib:**
   - `prisma.ts` → Initializes the Prisma client.
-  - `utils.ts` → Provides helper functions for grouping and formatting data.
+  - `utils.ts` → Provides helper functions for grouping and formatting data. Includes custom reporting period logic (`getLockedReportingPeriod()`).
 - **/components:**
-  - `TaskForm.tsx` → Form to add new tasks with fields such as description, type, tags, date, and link.
-  - `TaskList.tsx` → Displays and filters existing tasks.
+  - `TaskForm.tsx` → Form to add new tasks with fields such as description, type, tags, date, and link. Task types and tags are rendered dynamically from the database.
+  - `TaskList.tsx` → Displays and filters existing tasks (filter by type, date, and tag). Includes task editing and deletion features.
   - `ReportView.tsx` → Generates HTML/text reports grouped by task type and tag.
   - `SummaryGenerator.tsx` → Handles local AI integration using LM Studio.
 - **/styles:**
@@ -32,31 +32,56 @@ You are an expert in TypeScript, Next.js App Router, React, and Tailwind CSS. Al
   - **Task Model:** Contains fields like `id`, `description`, `type`, `date`, `link`, and `createdAt`, with associations to tags.
   - **Tag Model:** Defines unique tag names and relationships to tasks.
   - **TaskTag Model:** Acts as a junction table for many-to-many relationships between tasks and tags.
-  - Always refer to /prisma/schema.prisma for updated data model.
-  
+  - **ReportingPeriod Model:** Stores the locked reporting period logic with fields:
+    - `id` (always 1)
+    - `periodStart` (DateTime)
+    - `nextStartDate` (DateTime)
+    - `updatedAt` (auto-updated timestamp)
+  - Always refer to `/prisma/schema.prisma` for updated data models.
+
 - **Backend Functions:**
   - `addTask(task)` – Adds a new task to the database.
   - `getTasks(fromDate, toDate)` – Retrieves tasks within a specific date range.
   - `generateReportHTML(tasks)` – Generates an HTML or text report by grouping tasks by type and tag.
   - `groupByTypeAndTag(tasks)` – Organizes tasks for clear reporting.
+  - `updateTask(task)` – Edits task fields.
+  - `deleteTask(taskId)` – Deletes task by ID.
+  - `getLockedReportingPeriod()` – Returns the current reporting period based on a persistent database state.
 
 ## Core UI and Functionality
 - **Task Entry Form (`<TaskForm />`):**
   - Includes fields for `description`, `type`, `tags`, `date`, and `link`.
+  - `type` and `tags` options are dynamically rendered from the database.
   - On submission, it calls the `addTask()` function to store the task.
 - **Task List (`<TaskList />`):**
   - Displays tasks with filtering options by type, date, and tag.
-  - May include functionalities for task deletion and editing.
+  - Includes functionalities for task deletion and editing.
+  - Includes buttons to filter by “Today” or “Current Reporting Period”.
+  - When “Current Reporting Period” is selected, call `getLockedReportingPeriod()` to determine the start and end dates.
+  - Designed to be shown on the same page as `<TaskForm />` for streamlined input + feedback experience.
 - **Report View (`<ReportView />`):**
   - Generates a formatted report (HTML or text) grouping tasks by type and tag.
   - Can include export functionality (e.g., exporting as `.txt` or Markdown).
+
+## Reporting Logic
+- **Locked Reporting Period:**
+  - Reporting periods are based on fixed 2-week cycles stored in the database.
+  - Each period starts on a **Friday** and ends on the **Thursday 13 days later**.
+  - The utility `getLockedReportingPeriod()`:
+    - Queries the `ReportingPeriod` record.
+    - If `today >= nextStartDate`, updates:
+      - `periodStart = nextStartDate`
+      - `nextStartDate = periodStart + 14 days`
+    - Returns `{ periodStart, periodEnd }` where `periodEnd = periodStart + 13 days`.
+  - This ensures the reporting period does not shift mid-cycle and is consistent for all users.
+  - Use this logic for filtering tasks and generating consistent reports.
 
 ## LM Studio AI Integration
 - **Local AI-Powered Summaries:**
   - LM Studio is integrated to generate local AI summaries.
   - It runs on a local HTTP server at `http://localhost:1234/v1/chat/completions`.
   - The summary function should construct a prompt that includes task descriptions and requests a concise, HR-ready summary.
-  - **Example Prompt:**  
+  - **Example Prompt:**
     _"You are a helpful assistant summarizing work activity for an HR feedback report. Here are the work activities: [list tasks]. Generate a short HR-ready summary."_
   - Recommended models include Mistral 7B, Hermes 2, or LLaMA 3—choose the one that best suits your machine’s performance and resource availability.
 
@@ -68,4 +93,4 @@ You are an expert in TypeScript, Next.js App Router, React, and Tailwind CSS. Al
   - Implement task editing and deletion.
   - Add export functionality for reports (e.g., as `.txt` or Markdown).
   - Consider UI improvements such as a date picker (e.g., `react-datepicker`) and a model selection interface for LM Studio.
-  - Use Git for version control with frequent commits and backup the database file if using SQLite.
+  - Use Git for version control with frequent commits and back up the database file if using SQLite.

@@ -23,9 +23,9 @@ model Tag {
 
 model Task {
   id          String    @id @default(cuid())
-  description String
-  type        TaskType  @relation(fields: [typeId], references: [id])
-  typeId      String
+  description String?
+  type        TaskType? @relation(fields: [typeId], references: [id])
+  typeId      String?
   date        DateTime  @default(now())
   link        String?
   createdAt   DateTime  @default(now())
@@ -41,4 +41,12 @@ model TaskTag {
 
   @@id([taskId, tagId])
 }
+
+model ReportingPeriod {
+  id             Int      @id @default(1)
+  periodStart    DateTime
+  nextStartDate  DateTime
+  updatedAt      DateTime @updatedAt
+}
+
 
