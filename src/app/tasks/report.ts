@@ -1,9 +1,9 @@
 interface Task {
   id: string;
-  description: string;
+  description: string | null;
   date: Date;
   link: string | null;
-  typeId: string;
+  typeId: string | null;
   createdAt: Date;
 }
 
@@ -11,7 +11,7 @@ interface TaskWithType extends Task {
   type: {
     name: string;
     label: string;
-  };
+  } | null;
   tags: {
     tag: {
       name: string;
@@ -22,6 +22,9 @@ interface TaskWithType extends Task {
 
 function groupTasksByType(tasks: TaskWithType[]) {
   return tasks.reduce((acc, task) => {
+    // Skip tasks with no type
+    if (!task.type) return acc;
+    
     const typeName = task.type.name;
     if (!acc[typeName]) {
       acc[typeName] = {
@@ -75,7 +78,8 @@ export function generateReportHTML(tasks: TaskWithType[]): string {
         // Add the rest of the tasks
         for (const task of sortedTasks) {
           const linkHtml = task.link ? ` <a href="${task.link}">#</a>` : '';
-          html += `<li>${task.description}${linkHtml}</li>`;
+          const description = task.description || '(No description)';
+          html += `<li>${description}${linkHtml}</li>`;
         }
         
         html += `</ul>`;
@@ -88,7 +92,8 @@ export function generateReportHTML(tasks: TaskWithType[]): string {
         html += `<ul>`;
         for (const task of sortedTasks) {
           const linkHtml = task.link ? ` <a href="${task.link}">#</a>` : '';
-          html += `<li>${task.description}${linkHtml}</li>`;
+          const description = task.description || '(No description)';
+          html += `<li>${description}${linkHtml}</li>`;
         }
         html += `</ul>`;
       }

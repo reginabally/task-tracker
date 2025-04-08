@@ -8,13 +8,13 @@ import { useTaskContext } from '@/app/lib/TaskContext';
 
 interface Task {
   id: string;
-  description: string;
+  description: string | null;
   date: Date;
   link: string | null;
   type: {
     name: string;
     label: string;
-  };
+  } | null;
   tags: {
     tag: {
       name: string;
@@ -39,8 +39,8 @@ interface EditModalProps {
 }
 
 function EditModal({ task, taskTypes, tags, onClose, onSave }: EditModalProps) {
-  const [description, setDescription] = useState(task.description);
-  const [type, setType] = useState(task.type.name);
+  const [description, setDescription] = useState(task.description || '');
+  const [type, setType] = useState(task.type?.name || '');
   const [selectedTags, setSelectedTags] = useState<string[]>(
     task.tags.map(({ tag }) => tag.name)
   );
@@ -518,7 +518,7 @@ export default function TaskList() {
           {(() => {
             const slackPingTasks = tasks.filter(
               task => 
-                task.type.name === 'MANUAL_REVIEW_WORK' && 
+                task.type?.name === 'MANUAL_REVIEW_WORK' && 
                 task.tags.some(({ tag }) => tag.name === 'slack-ping')
             );
             if (slackPingTasks.length > 0) {
@@ -537,7 +537,7 @@ export default function TaskList() {
           {tasks
             .filter(
               task => 
-                !(task.type.name === 'MANUAL_REVIEW_WORK' && 
+                !(task.type?.name === 'MANUAL_REVIEW_WORK' && 
                   task.tags.some(({ tag }) => tag.name === 'slack-ping'))
             )
             .map((task) => (
@@ -560,7 +560,7 @@ export default function TaskList() {
                     )}
                     <div className="mt-2 flex flex-wrap gap-2">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {task.type.label}
+                        {task.type?.label}
                       </span>
                       {task.tags.map(({ tag }) => (
                         <span
