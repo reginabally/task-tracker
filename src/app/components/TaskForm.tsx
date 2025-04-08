@@ -75,7 +75,43 @@ export default function TaskForm() {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    if (name === 'link') {
+      // Handle Slack URLs
+      if (value.startsWith('https://a8c.slack.com/')) {
+        setFormData(prev => ({
+          ...prev,
+          [name]: value,
+          type: 'MANUAL_REVIEW_WORK',
+          tags: prev.tags.includes('slack-ping') ? prev.tags : [...prev.tags, 'slack-ping']
+        }));
+      }
+      // Handle WordPress comment links
+      else if (value.includes('#comment-')) {
+        setFormData(prev => ({
+          ...prev,
+          [name]: value,
+          type: 'COMMUNICATION',
+          tags: prev.tags.includes('p2-discussion') ? prev.tags : [...prev.tags, 'p2-discussion']
+        }));
+      }
+      // Handle WordPress post links
+      else if (value.includes('wordpress.com')) {
+        setFormData(prev => ({
+          ...prev,
+          [name]: value,
+          type: 'COMMUNICATION',
+          tags: prev.tags.includes('p2-post') ? prev.tags : [...prev.tags, 'p2-post']
+        }));
+      }
+      else {
+        // Normal input handling for other links
+        setFormData(prev => ({ ...prev, [name]: value }));
+      }
+    } else {
+      // Normal input handling for non-link fields
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleDateChange = (date: Date | null) => {
@@ -160,25 +196,9 @@ export default function TaskForm() {
     setError(null);
     
     try {
-      // Check if the task has only a Slack link and a date
-      const isSlackLink = formData.link.startsWith('https://a8c.slack.com');
-      const hasOnlySlackLinkAndDate = isSlackLink && 
-                                     formData.description.trim() === '' && 
-                                     formData.type === '' && 
-                                     formData.tags.length === 0;
-      
-      // Create a copy of formData to avoid modifying the state directly
-      const taskData = { ...formData };
-      
-      // If it's a Slack link with only date, set type and tag automatically
-      if (hasOnlySlackLinkAndDate) {
-        taskData.type = 'MANUAL_REVIEW_WORK';
-        taskData.tags = ['slack-ping'];
-      }
-      
       await addTask({
-        ...taskData,
-        date: taskData.date.toISOString().split('T')[0]
+        ...formData,
+        date: formData.date.toISOString().split('T')[0]
       });
       
       // Reset form after successful submission
