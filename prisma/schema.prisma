@@ -7,29 +7,29 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum TaskType {
-  MANUAL_REVIEW_WORK
-  COMMUNICATION
-  PROJECT
-  LEARNING
-  DOCUMENTATION
-  OTHERS
+model TaskType {
+  id     String   @id @default(cuid())
+  name   String   @unique            // e.g. "MANUAL_REVIEW_WORK"
+  label  String                      // e.g. "Manual Review Work"
+  tasks  Task[]
+}
+
+model Tag {
+  id     String   @id @default(cuid())
+  name   String   @unique            // e.g. "fraud-pattern"
+  label  String                      // e.g. "Fraud Pattern"
+  tasks  TaskTag[]
 }
 
 model Task {
   id          String    @id @default(cuid())
   description String
-  type        TaskType
+  type        TaskType  @relation(fields: [typeId], references: [id])
+  typeId      String
   date        DateTime  @default(now())
   link        String?
   createdAt   DateTime  @default(now())
   tags        TaskTag[]
-}
-
-model Tag {
-  id    String    @id @default(cuid())
-  name  String    @unique
-  tasks TaskTag[]
 }
 
 model TaskTag {
@@ -41,3 +41,4 @@ model TaskTag {
 
   @@id([taskId, tagId])
 }
+

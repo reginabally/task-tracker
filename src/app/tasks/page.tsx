@@ -13,7 +13,6 @@ export default function TasksPage() {
 
         <div className="bg-white rounded-lg shadow">
           <div className="px-4 py-5 sm:p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Add New Task</h2>
             <TaskForm />
           </div>
         </div>
