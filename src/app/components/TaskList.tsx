@@ -280,7 +280,7 @@ function EditModal({ task, taskTypes, tags, onClose, onSave }: EditModalProps) {
   );
 }
 
-type DateFilter = 'today' | 'current-period';
+type DateFilter = 'today' | 'current-period' | 'custom';
 
 export default function TaskList() {
   const { refreshTrigger } = useTaskContext();
@@ -338,6 +338,10 @@ export default function TaskList() {
           const { periodStart, periodEnd } = await getLockedReportingPeriodAction();
           startDate = periodStart;
           endDate = periodEnd;
+        } else if (dateFilter === 'custom') {
+          // For custom filter, use the dates from the filters state
+          startDate = filters.startDate || undefined;
+          endDate = filters.endDate || undefined;
         }
 
         const filteredTasks = await fetchTasks({
@@ -373,6 +377,11 @@ export default function TaskList() {
       (newFilters.endDate?.getTime() !== filters.endDate?.getTime())
     ) {
       setFilters(newFilters);
+      
+      // If custom dates are applied, set the dateFilter to 'custom'
+      if (newFilters.startDate && newFilters.endDate) {
+        setDateFilter('custom');
+      }
     }
   };
 
@@ -443,6 +452,7 @@ export default function TaskList() {
         endDate: periodEnd
       });
     }
+    // For 'custom', we don't update the filters here as they will be set by the Filter button
   };
 
   // Format date for the date input field (YYYY-MM-DD format)
@@ -473,6 +483,7 @@ export default function TaskList() {
         onFilterChange={handleFilterChange} 
         initialFilters={initialFiltersValue}
         onClearFilters={handleClearFilters}
+        onApplyCustomFilter={() => setDateFilter('custom')}
       />
       
       <div className="flex gap-2 mb-4">
@@ -495,6 +506,16 @@ export default function TaskList() {
           }`}
         >
           Current Reporting Period
+        </button>
+        <button
+          onClick={() => handleFilterClick('custom')}
+          className={`px-4 py-2 rounded-md ${
+            dateFilter === 'custom'
+              ? 'bg-blue-500 text-white'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          Custom
         </button>
       </div>
       

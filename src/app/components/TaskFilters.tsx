@@ -18,6 +18,7 @@ interface TaskFiltersProps {
     endDate: string;
   };
   onClearFilters?: () => void;
+  onApplyCustomFilter?: () => void;
 }
 
 export default function TaskFilters({ 
@@ -25,7 +26,8 @@ export default function TaskFilters({
   tags, 
   onFilterChange,
   initialFilters = { type: '', tag: '', startDate: '', endDate: '' },
-  onClearFilters
+  onClearFilters,
+  onApplyCustomFilter
 }: TaskFiltersProps) {
   const [type, setType] = useState(initialFilters.type);
   const [tag, setTag] = useState(initialFilters.tag);
@@ -67,14 +69,12 @@ export default function TaskFilters({
   // Handle date changes
   const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setStartDate(e.target.value);
-    // We'll notify the parent after the state update
-    setTimeout(notifyFilterChange, 0);
+    // We don't notify the parent here anymore, as we'll do it when the Filter button is clicked
   };
 
   const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEndDate(e.target.value);
-    // We'll notify the parent after the state update
-    setTimeout(notifyFilterChange, 0);
+    // We don't notify the parent here anymore, as we'll do it when the Filter button is clicked
   };
 
   // Clear all filters
@@ -97,6 +97,17 @@ export default function TaskFilters({
         onClearFilters();
       }
     }, 0);
+  };
+
+  // Apply custom date filter
+  const handleApplyCustomFilter = () => {
+    // Notify the parent of filter changes
+    notifyFilterChange();
+    
+    // Call the onApplyCustomFilter callback if provided
+    if (onApplyCustomFilter) {
+      onApplyCustomFilter();
+    }
   };
 
   return (
@@ -156,7 +167,13 @@ export default function TaskFilters({
         </div>
       </div>
       
-      <div className="mt-4 flex justify-end">
+      <div className="mt-4 flex justify-end space-x-2">
+        <button
+          onClick={handleApplyCustomFilter}
+          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+        >
+          Filter
+        </button>
         <button
           onClick={handleClearFilters}
           className="px-4 py-2 bg-gray-200 text-gray-900 rounded-md hover:bg-gray-300"
