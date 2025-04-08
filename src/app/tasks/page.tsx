@@ -1,7 +1,13 @@
+import { Metadata } from 'next';
 import TaskForm from '../components/TaskForm';
 import TaskList from '../components/TaskList';
 import TasksHeader from '../components/TasksHeader';
 import { TaskProvider } from '../lib/TaskContext';
+
+export const metadata: Metadata = {
+  title: 'Task Tracker',
+  description: 'Add and manage your daily tasks and activities',
+};
 
 export default function TasksPage() {
   return (
