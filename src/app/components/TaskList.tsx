@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import TaskFilters from './TaskFilters';
 import { fetchTasks, getAllTaskTypes, getAllTags, updateTask, deleteTask, getLockedReportingPeriodAction } from '@/app/tasks/actions';
 import { useTaskContext } from '@/app/lib/TaskContext';
+import { useRouter } from 'next/navigation';
 
 interface Task {
   id: string;
@@ -284,6 +285,7 @@ type DateFilter = 'today' | 'current-period' | 'custom';
 
 export default function TaskList() {
   const { refreshTrigger } = useTaskContext();
+  const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskTypes, setTaskTypes] = useState<{ name: string; label: string; }[]>([]);
   const [tags, setTags] = useState<{ name: string; label: string; }[]>([]);
@@ -475,6 +477,40 @@ export default function TaskList() {
     setDateFilter('today');
   };
 
+  const handleGenerateReport = () => {
+    // Create a query string with the current filter parameters
+    const queryParams = new URLSearchParams();
+    
+    // Add date filter parameters
+    if (dateFilter === 'today') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(today);
+      endOfDay.setHours(23, 59, 59, 999);
+      
+      queryParams.append('startDate', today.toISOString());
+      queryParams.append('endDate', endOfDay.toISOString());
+    } else if (dateFilter === 'current-period') {
+      // We'll fetch the current period on the report page
+      queryParams.append('filter', 'current-period');
+    } else if (dateFilter === 'custom' && filters.startDate && filters.endDate) {
+      queryParams.append('startDate', filters.startDate.toISOString());
+      queryParams.append('endDate', filters.endDate.toISOString());
+    }
+    
+    // Add type and tag filters if they exist
+    if (filters.type) {
+      queryParams.append('type', filters.type);
+    }
+    
+    if (filters.tag) {
+      queryParams.append('tag', filters.tag);
+    }
+    
+    // Navigate to the report page with the query parameters
+    router.push(`/report?${queryParams.toString()}`);
+  };
+
   return (
     <div>
       <TaskFilters 
@@ -516,6 +552,12 @@ export default function TaskList() {
           }`}
         >
           Custom
+        </button>
+        <button
+          onClick={handleGenerateReport}
+          className="ml-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          Generate Report
         </button>
       </div>
       

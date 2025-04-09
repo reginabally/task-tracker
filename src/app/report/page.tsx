@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { fetchTasks, getLockedReportingPeriodAction } from '@/app/tasks/actions';
 import { generateReportHTML } from '@/app/tasks/report';
 import ReportView from '@/app/components/ReportView';
@@ -11,6 +11,7 @@ export default function ReportPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const generateReport = async () => {
@@ -18,13 +19,45 @@ export default function ReportPage() {
       setError(null);
       
       try {
-        // Get the current reporting period
-        const { periodStart, periodEnd } = await getLockedReportingPeriodAction();
+        let startDate: Date | undefined;
+        let endDate: Date | undefined;
+        let type: string | undefined;
+        let tag: string | undefined;
         
-        // Fetch tasks for the current reporting period
+        // Get filter parameters from URL
+        const filter = searchParams.get('filter');
+        const startDateParam = searchParams.get('startDate');
+        const endDateParam = searchParams.get('endDate');
+        const typeParam = searchParams.get('type');
+        const tagParam = searchParams.get('tag');
+        
+        // Set date range based on filter type
+        if (filter === 'current-period') {
+          // Get the current reporting period
+          const { periodStart, periodEnd } = await getLockedReportingPeriodAction();
+          startDate = periodStart;
+          endDate = periodEnd;
+        } else if (startDateParam && endDateParam) {
+          // Use custom date range from URL parameters
+          startDate = new Date(startDateParam);
+          endDate = new Date(endDateParam);
+        }
+        
+        // Set type and tag filters if provided
+        if (typeParam) {
+          type = typeParam;
+        }
+        
+        if (tagParam) {
+          tag = tagParam;
+        }
+        
+        // Fetch tasks with the specified filters
         const tasks = await fetchTasks({
-          startDate: periodStart,
-          endDate: periodEnd
+          startDate,
+          endDate,
+          type,
+          tag
         });
         
         // Generate HTML report
@@ -41,7 +74,7 @@ export default function ReportPage() {
     };
 
     generateReport();
-  }, []);
+  }, [searchParams]);
 
   const handleDownloadReport = () => {
     // Create a blob from the HTML content
