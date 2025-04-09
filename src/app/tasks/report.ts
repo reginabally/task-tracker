@@ -44,10 +44,7 @@ export function generateReportHTML(tasks: TaskWithType[]): string {
   // Sort task types by their name for consistent ordering
   const sortedTypes = Object.entries(groupedTasks).sort(([a], [b]) => a.localeCompare(b));
 
-  // Start with Work section
-  html += `<h2>Work</h2>`;
-  
-  // Add task types under Work section
+  // Add each task type section
   for (const [, { label, tasks: originalTasks }] of sortedTypes) {
     if (originalTasks.length > 0) {
       html += `<h3>${label}</h3>`;

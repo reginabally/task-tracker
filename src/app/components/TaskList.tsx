@@ -511,6 +511,25 @@ export default function TaskList() {
     router.push(`/report?${queryParams.toString()}`);
   };
 
+  const handleAISummary = () => {
+    // Create a URL with the current filters
+    const params = new URLSearchParams();
+    
+    // Add type filter if present
+    if (filters.type) params.set('type', filters.type);
+    
+    // Add tag filter if present
+    if (filters.tag) params.set('tag', filters.tag);
+    
+    // Add date filters if present
+    if (filters.startDate) params.set('startDate', filters.startDate.toISOString());
+    if (filters.endDate) params.set('endDate', filters.endDate.toISOString());
+    
+    // Navigate to the summary page with filters
+    const queryString = params.toString();
+    router.push(`/tasks/summary${queryString ? `?${queryString}` : ''}`);
+  };
+
   return (
     <div>
       <TaskFilters 
@@ -553,12 +572,20 @@ export default function TaskList() {
         >
           Custom
         </button>
-        <button
-          onClick={handleGenerateReport}
-          className="ml-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-        >
-          Generate Report
-        </button>
+        <div className="ml-auto flex gap-2">
+          <button
+            onClick={handleGenerateReport}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            Generate Report
+          </button>
+          <button
+            onClick={handleAISummary}
+            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+          >
+            AI Summary
+          </button>
+        </div>
       </div>
       
       {error && (
