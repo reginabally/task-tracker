@@ -1,6 +1,10 @@
 # Task Tracker
 
-A comprehensive task management application designed to help track daily work activities, generate reports, and summarize accomplishments. Perfect for team members who need to document their work for reporting periods.
+An open-source task tracking tool designed to help individuals and teams log daily work activities, organize tasks by type and tag, and generate structured bi-weekly reports. Ideal for professionals who need a lightweight and customizable way to document their work for performance reviews or team updates.
+
+🛠 Built with Next.js App Router, Tailwind CSS, and Prisma.  
+📅 Designed for fixed 2-week reporting cycles.  
+📦 Local setup with SQLite and zero external services.
 
 ## Technologies
 
