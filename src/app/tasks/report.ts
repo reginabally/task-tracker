@@ -100,11 +100,5 @@ export function generateReportHTML(tasks: TaskWithType[]): string {
     }
   }
 
-  // Add Personal section
-  html += `<h2>Personal</h2>`;
-  
-  // Note: In a real implementation, you would filter tasks for personal work here
-  // For now, we're just adding the section header as requested
-
   return html;
 } 
