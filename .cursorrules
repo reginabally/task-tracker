@@ -14,7 +14,7 @@ You are an expert in TypeScript, Next.js App Router, React, and Tailwind CSS. Al
   - `page.tsx` → Main task page that includes both the task entry form (`<TaskForm />`) and task list (`<TaskList />`). This combined design supports real-time feedback, reduces context switching, and improves the batch entry experience.
   - `actions.ts` → Contains database actions like `addTask`, `fetchTasks`, `updateTask`, and `deleteTask`.
   - `report.ts` → Logic for generating task reports.
-  - `summary.ts` → Integration file for LM Studio AI summaries.
+  - `summary.ts` → Integration file for AI summaries.
 - **/lib:**
   - `prisma.ts` → Initializes the Prisma client.
   - `utils.ts` → Provides helper functions for grouping and formatting data. Includes custom reporting period logic (`getLockedReportingPeriod()`).
@@ -22,7 +22,7 @@ You are an expert in TypeScript, Next.js App Router, React, and Tailwind CSS. Al
   - `TaskForm.tsx` → Form to add new tasks with fields such as description, type, tags, date, and link. Task types and tags are rendered dynamically from the database.
   - `TaskList.tsx` → Displays and filters existing tasks (filter by type, date, and tag). Includes task editing and deletion features.
   - `ReportView.tsx` → Generates HTML/text reports grouped by task type and tag.
-  - `SummaryGenerator.tsx` → Handles local AI integration using LM Studio.
+  - `SummaryGenerator.tsx` → Handles AI integration.
 - **/styles:**
   - `globals.css` → Global styling using Tailwind CSS.
 
@@ -77,13 +77,7 @@ You are an expert in TypeScript, Next.js App Router, React, and Tailwind CSS. Al
   - Use this logic for filtering tasks and generating consistent reports.
 
 ## LM Studio AI Integration
-- **Local AI-Powered Summaries:**
-  - LM Studio is integrated to generate local AI summaries.
-  - It runs on a local HTTP server at `http://localhost:1234/v1/chat/completions`.
-  - The summary function should construct a prompt that includes task descriptions and requests a concise, HR-ready summary.
-  - **Example Prompt:**
-    _"You are a helpful assistant summarizing work activity for an HR feedback report. Here are the work activities: [list tasks]. Generate a short HR-ready summary."_
-  - Recommended models include Mistral 7B, Hermes 2, or LLaMA 3—choose the one that best suits your machine’s performance and resource availability.
+- Refer to /tasks/tasks.md for implementation rules.
 
 ## Additional Guidelines and Enhancements
 - **Coding Best Practices:**
