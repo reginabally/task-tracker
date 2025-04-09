@@ -13,6 +13,12 @@ function getLastFriday(date: Date): Date {
   return lastFriday;
 }
 
+// Helper: Parse date string in YYYY-MM-DD format
+function parseDate(dateStr: string): Date {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
 async function main() {
   // Seed task types
   await prisma.taskType.createMany({
@@ -62,9 +68,23 @@ async function main() {
   });
 
   // Initialize reporting period
-  const today = new Date();
-  const periodStart = getLastFriday(today);
-  const nextStartDate = addDays(periodStart, 14);
+  // Check for environment variables for manual date entry
+  const periodStartStr = process.env.PERIOD_START_DATE;
+  const nextStartDateStr = process.env.NEXT_START_DATE;
+  
+  let periodStart: Date;
+  let nextStartDate: Date;
+  
+  if (periodStartStr && nextStartDateStr) {
+    // Use manually provided dates
+    periodStart = parseDate(periodStartStr);
+    nextStartDate = parseDate(nextStartDateStr);
+  } else {
+    // Fall back to automatic calculation
+    const today = new Date();
+    periodStart = getLastFriday(today);
+    nextStartDate = addDays(periodStart, 14);
+  }
 
   await prisma.reportingPeriod.upsert({
     where: { id: 1 },
