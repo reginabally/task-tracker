@@ -1,6 +1,17 @@
 import { PrismaClient } from '@prisma/client';
+import { addDays } from "date-fns";
 
 const prisma = new PrismaClient();
+
+// Helper: Get last Friday from any date
+function getLastFriday(date: Date): Date {
+  const day = date.getDay();
+  const diff = (day >= 5) ? day - 5 : day + 2;
+  const lastFriday = new Date(date);
+  lastFriday.setDate(date.getDate() - diff);
+  lastFriday.setHours(0, 0, 0, 0);
+  return lastFriday;
+}
 
 async function main() {
   // Seed task types
@@ -49,11 +60,33 @@ async function main() {
       { name: 'other', label: 'Other' }
     ]
   });
+
+  // Initialize reporting period
+  const today = new Date();
+  const periodStart = getLastFriday(today);
+  const nextStartDate = addDays(periodStart, 14);
+
+  await prisma.reportingPeriod.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      id: 1,
+      periodStart,
+      nextStartDate,
+    },
+  });
+
+  console.log("✅ Reporting period initialized:", {
+    periodStart: periodStart.toISOString().split("T")[0],
+    nextStartDate: nextStartDate.toISOString().split("T")[0],
+  });
 }
 
 main()
-  .catch(e => {
-    console.error(e);
+  .catch((e) => {
+    console.error("❌ Error seeding database:", e);
     process.exit(1);
   })
-  .finally(() => prisma.$disconnect());
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
