@@ -1,10 +1,11 @@
 # Task Tracker
 
-An open-source task tracking tool designed to help individuals and teams log daily work activities, organize tasks by type and tag, and generate structured bi-weekly reports. Ideal for professionals who need a lightweight and customizable way to document their work for performance reviews or team updates.
+An open-source task tracking tool designed to help individuals and teams log daily work activities, organize tasks by type and tag, and generate structured bi-weekly reports. Ideal for professionals who need a lightweight and customizable way to document their work for performance reviews or team updates. The integrated AI summarization feature helps transform raw task lists into well-structured HR self-feedback drafts.
 
 🛠 Built with Next.js App Router, Tailwind CSS, and Prisma.  
 📅 Designed for fixed 2-week reporting cycles.  
-📦 Local setup with SQLite and zero external services.
+📦 Local setup with SQLite and zero external services.  
+🤖 AI-powered self-feedback generation with LM Studio integration.
 
 ## Technologies
 
@@ -13,6 +14,7 @@ An open-source task tracking tool designed to help individuals and teams log dai
 - **Database:** SQLite (customizable via Prisma)
 - **Date Handling:** date-fns, dayjs
 - **UI Components:** react-datepicker
+- **AI Integration:** LM Studio
 
 ## Features
 
@@ -22,7 +24,11 @@ An open-source task tracking tool designed to help individuals and teams log dai
 - **Reporting:** Generate formatted reports grouped by task type
 - **Fixed Reporting Periods:** Automatically track 2-week reporting cycles
 - **Dynamic Tags:** Create new tags on-the-fly during task entry
-- **Responsive Design:** Works on desktop and mobile devices
+- **AI Summarization:** Transform task lists into structured self-feedback drafts using LM Studio
+  - Generate summaries organized by section (Summary, Growth, Achievements, Future Goals)
+  - Upload previous HR self-feedback for context-aware summaries
+  - Customize prompts for personalized summary generation
+  - First-person voice summaries ready for performance reviews
 
 ## Setup and Installation
 
@@ -107,6 +113,14 @@ An open-source task tracking tool designed to help individuals and teams log dai
    - Filter tasks by date range and/or other filters and click the "Filter" button. Click "Today" or "Current Reporting Period" for quick date range filtering
    - Click the "Generate Report" button
    - View and export the formatted report grouped by task type
+
+5. **Using AI Summarization:**
+   - On the Task Tracker page, filter tasks by date range and/or other filters and click the "Filter" button
+   - Click the "AI Summary" button to navigate to the AI Task Summary page
+   - Review the auto-generated task summary
+   - Optionally upload a previous HR self-feedback file (.md) for additional context
+   - Send to AI to generate a structured self-feedback draft
+   - The AI will organize your content into Summary, Growth, Achievements, and Future Goals sections
 
 ## License
 
