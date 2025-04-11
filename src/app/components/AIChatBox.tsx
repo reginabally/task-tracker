@@ -5,12 +5,22 @@ import { useState, useEffect } from 'react';
 interface AIChatBoxProps {
   prompt: string;
   content: string;
+  previousFeedback?: string | null;
   onEdit?: (newContent: string) => void;
   onPromptEdit?: (newPrompt: string) => void;
   onSendToAI?: (response: string) => void;
+  onLoadingStateChange?: (loading: boolean) => void;
 }
 
-export default function AIChatBox({ prompt, content, onEdit, onPromptEdit, onSendToAI }: AIChatBoxProps) {
+export default function AIChatBox({ 
+  prompt, 
+  content, 
+  previousFeedback = null,
+  onEdit, 
+  onPromptEdit, 
+  onSendToAI, 
+  onLoadingStateChange 
+}: AIChatBoxProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedPrompt, setEditedPrompt] = useState(prompt);
   const [editedContent, setEditedContent] = useState(content);
@@ -21,6 +31,13 @@ export default function AIChatBox({ prompt, content, onEdit, onPromptEdit, onSen
     setEditedPrompt(prompt);
     setEditedContent(content);
   }, [prompt, content]);
+
+  // Update parent component when loading state changes
+  useEffect(() => {
+    if (onLoadingStateChange) {
+      onLoadingStateChange(isLoading);
+    }
+  }, [isLoading, onLoadingStateChange]);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -52,8 +69,16 @@ export default function AIChatBox({ prompt, content, onEdit, onPromptEdit, onSen
     setIsLoading(true);
     
     try {
-      // Replace the placeholder with the actual content
-      const finalPrompt = editedPrompt.replace('%TASK_SUMMARY%', editedContent);
+      // Replace the placeholders with the actual content
+      let finalPrompt = editedPrompt.replace('%TASK_SUMMARY%', editedContent);
+      
+      // Replace the previous feedback placeholder if available
+      if (previousFeedback) {
+        finalPrompt = finalPrompt.replace('%SUMMARIZED_PREVIOUS_FEEDBACK%', previousFeedback);
+      } else {
+        // If no previous feedback, remove the section
+        finalPrompt = finalPrompt.replace(/Here is a brief summary of my previous HR feedback, to use as context:\n%SUMMARIZED_PREVIOUS_FEEDBACK%\n\n/g, '');
+      }
       
       // Call the LM Studio API
       const response = await fetch('http://localhost:1234/v1/chat/completions', {
@@ -112,7 +137,7 @@ export default function AIChatBox({ prompt, content, onEdit, onPromptEdit, onSen
                   onChange={(e) => setEditedPrompt(e.target.value)}
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500 text-gray-900"
                   rows={3}
-                  placeholder="Enter your prompt with %TASK_SUMMARY% placeholder"
+                  placeholder="Enter your prompt with placeholders like %TASK_SUMMARY% and %SUMMARIZED_PREVIOUS_FEEDBACK%"
                 />
               </div>
               <div>
@@ -141,12 +166,12 @@ export default function AIChatBox({ prompt, content, onEdit, onPromptEdit, onSen
             </div>
           ) : (
             <div className="relative">
-              <div className="text-gray-900 whitespace-pre-wrap">{editedPrompt}</div>
-              <div className="absolute top-0 right-0 flex">
+              <div className="text-gray-900 whitespace-pre-wrap pr-16">{editedPrompt}</div>
+              <div className="absolute top-0 right-0 flex space-x-2">
                 <button
                   onClick={handleSendToAI}
                   disabled={isLoading}
-                  className="p-1 text-gray-400 hover:text-gray-600 mr-1"
+                  className="p-1 text-gray-400 hover:text-gray-600"
                   title="Send to AI for summarization"
                 >
                   {isLoading ? (

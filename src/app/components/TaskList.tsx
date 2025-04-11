@@ -300,6 +300,7 @@ export default function TaskList() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
   const [dateFilter, setDateFilter] = useState<DateFilter>('today');
+  const [isSlackPingGroupExpanded, setIsSlackPingGroupExpanded] = useState(false);
 
   // Load task types and tags on component mount
   useEffect(() => {
@@ -604,31 +605,114 @@ export default function TaskList() {
         </div>
       ) : (
         <div className="space-y-4">
-          {/* Summary row for Manual Review Work + Slack Ping tasks */}
+          {/* Slack Ping Tasks Group */}
           {(() => {
             const slackPingTasks = tasks.filter(
-              task => 
-                task.type?.name === 'MANUAL_REVIEW_WORK' && 
-                task.tags.some(({ tag }) => tag.name === 'slack-ping')
+              task => task.tags.some(({ tag }) => tag.name === 'slack-ping')
             );
+            
             if (slackPingTasks.length > 0) {
               return (
                 <div className="bg-blue-50 p-4 rounded-lg shadow-sm border border-blue-200">
-                  <p className="text-blue-900 font-medium">
-                    {slackPingTasks.length} Slack {slackPingTasks.length === 1 ? 'ping' : 'pings'} answered
-                  </p>
+                  {isSlackPingGroupExpanded ? (
+                    <div>
+                      <div className="flex justify-between items-center mb-3">
+                        <h3 className="text-blue-900 font-medium">
+                          Slack Pings ({slackPingTasks.length})
+                        </h3>
+                        <button
+                          onClick={() => setIsSlackPingGroupExpanded(false)}
+                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        >
+                          Collapse
+                        </button>
+                      </div>
+                      <div className="space-y-3">
+                        {slackPingTasks
+                          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                          .map((task) => (
+                            <div
+                              key={task.id}
+                              className="bg-white p-3 rounded-md shadow-sm border border-gray-200"
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <p className="text-gray-900">{task.description}</p>
+                                  {task.link && (
+                                    <a
+                                      href={task.link}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 hover:text-blue-800 text-sm block mt-1"
+                                    >
+                                      {task.link}
+                                    </a>
+                                  )}
+                                  <div className="mt-2 flex flex-wrap gap-2">
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                      {task.type?.label}
+                                    </span>
+                                    {task.tags.map(({ tag }) => (
+                                      <span
+                                        key={tag.name}
+                                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+                                      >
+                                        {tag.label}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                                <div className="ml-4 flex-shrink-0 flex items-center space-x-2">
+                                  <time className="text-sm text-gray-500">
+                                    {format(new Date(task.date), 'MMM d, yyyy')}
+                                  </time>
+                                  <button
+                                    onClick={() => setEditingTask(task)}
+                                    className="p-1 text-gray-500 hover:text-blue-600"
+                                    title="Edit task"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    onClick={() => setDeletingTaskId(task.id)}
+                                    className="p-1 text-gray-500 hover:text-red-600"
+                                    title="Delete task"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                      <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                    </svg>
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between items-center">
+                      <span className="text-blue-900 font-medium">
+                        {slackPingTasks.length} Slack {slackPingTasks.length === 1 ? 'ping' : 'pings'} answered
+                      </span>
+                      <button
+                        onClick={() => setIsSlackPingGroupExpanded(true)}
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      >
+                        Expand
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             }
             return null;
           })()}
 
-          {/* Filtered task list excluding Manual Review Work + Slack Ping tasks */}
+          {/* Regular task list excluding Slack Ping tasks */}
           {tasks
             .filter(
-              task => 
-                !(task.type?.name === 'MANUAL_REVIEW_WORK' && 
-                  task.tags.some(({ tag }) => tag.name === 'slack-ping'))
+              task => !task.tags.some(({ tag }) => tag.name === 'slack-ping')
             )
             .map((task) => (
               <div
