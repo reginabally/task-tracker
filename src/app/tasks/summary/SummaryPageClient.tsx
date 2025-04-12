@@ -5,6 +5,7 @@ import Link from 'next/link';
 import AIChatBox from '@/app/components/AIChatBox';
 import CollapsibleText from '@/app/components/CollapsibleText';
 import ApiKeyCheck from '@/app/components/ApiKeyCheck';
+import { format } from 'date-fns';
 
 // Model options type
 type AIModel = 'lm-studio' | 'openai-gpt4o';
@@ -210,6 +211,33 @@ Use a neutral tone and first-person voice. Keep it short, suitable for use as co
     }
   };
 
+  // Handle downloading the AI response as markdown
+  const handleDownload = () => {
+    if (!aiResponse) return;
+    
+    // Create filename with current date
+    const currentDate = format(new Date(), 'yyyy-MM-dd');
+    const filename = `ai-summary-${currentDate}.md`;
+    
+    // Create the markdown content
+    const markdownContent = `# AI Summary - ${currentDate}\n\n${aiResponse}`;
+    
+    // Create a blob for download
+    const blob = new Blob([markdownContent], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    
+    // Create a download link and trigger click
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    
+    // Clean up
+    URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -319,9 +347,22 @@ Use a neutral tone and first-person voice. Keep it short, suitable for use as co
           {/* Show AI Response if available, otherwise show Plain Text Summary */}
           <div className="bg-white rounded-lg shadow">
             <div className="px-4 py-5 sm:p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                {isLoading ? 'AI Summary Response' : (aiResponse ? 'AI Summary Response' : 'Plain Text Summary')}
-              </h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  {isLoading ? 'AI Summary Response' : (aiResponse ? 'AI Summary Response' : 'Plain Text Summary')}
+                </h2>
+                {aiResponse && !isLoading && (
+                  <button
+                    onClick={handleDownload}
+                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                    Download as Markdown
+                  </button>
+                )}
+              </div>
               {isLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="flex flex-col items-center space-y-4">
@@ -333,7 +374,10 @@ Use a neutral tone and first-person voice. Keep it short, suitable for use as co
                   </div>
                 </div>
               ) : (
-                <CollapsibleText text={aiResponse || plainTextReport || 'No tasks found for the current reporting period.'} />
+                <CollapsibleText 
+                  text={aiResponse || plainTextReport || 'No tasks found for the current reporting period.'} 
+                  collapsible={!aiResponse}
+                />
               )}
             </div>
           </div>

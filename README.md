@@ -30,6 +30,7 @@ An open-source task tracking tool designed to help individuals and teams log dai
   - Upload previous HR self-feedback for context-aware summaries
   - Customize prompts for personalized summary generation
   - First-person voice summaries ready for performance reviews
+  - Download summaries as Markdown files for easy sharing and storage
 
 ## Setup and Installation
 
@@ -138,3 +139,4 @@ An open-source task tracking tool designed to help individuals and teams log dai
    - Optionally upload a previous HR self-feedback file (.md) for additional context
    - Send to AI to generate a structured self-feedback draft
    - The AI will organize your content into Summary, Growth, Achievements, and Future Goals sections
+   - Use the "Download as Markdown" button to save the AI summary to your computer

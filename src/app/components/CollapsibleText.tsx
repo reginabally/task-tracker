@@ -5,13 +5,14 @@ import { useState } from 'react';
 interface CollapsibleTextProps {
   text: string;
   maxLines?: number;
+  collapsible?: boolean;
 }
 
-export default function CollapsibleText({ text, maxLines = 5 }: CollapsibleTextProps) {
+export default function CollapsibleText({ text, maxLines = 5, collapsible = true }: CollapsibleTextProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const lines = text.split('\n');
-  const hasMoreLines = lines.length > maxLines;
-  const displayLines = isExpanded ? lines : lines.slice(0, maxLines);
+  const hasMoreLines = collapsible && lines.length > maxLines;
+  const displayLines = isExpanded || !collapsible ? lines : lines.slice(0, maxLines);
 
   return (
     <div className="relative">
