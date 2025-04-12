@@ -5,7 +5,7 @@ An open-source task tracking tool designed to help individuals and teams log dai
 🛠 Built with Next.js App Router, Tailwind CSS, and Prisma.  
 📅 Designed for fixed 2-week reporting cycles.  
 📦 Local setup with SQLite and zero external services.  
-🤖 AI-powered self-feedback generation with LM Studio integration.
+🤖 AI-powered self-feedback generation with LM Studio and OpenAI integration.
 
 ## Technologies
 
@@ -14,7 +14,7 @@ An open-source task tracking tool designed to help individuals and teams log dai
 - **Database:** SQLite (customizable via Prisma)
 - **Date Handling:** date-fns, dayjs
 - **UI Components:** react-datepicker
-- **AI Integration:** LM Studio
+- **AI Integration:** LM Studio (local), OpenAI API (cloud)
 
 ## Features
 
@@ -24,7 +24,8 @@ An open-source task tracking tool designed to help individuals and teams log dai
 - **Reporting:** Generate formatted reports grouped by task type
 - **Fixed Reporting Periods:** Automatically track 2-week reporting cycles
 - **Dynamic Tags:** Create new tags on-the-fly during task entry
-- **AI Summarization:** Transform task lists into structured self-feedback drafts using LM Studio
+- **AI Summarization:** Transform task lists into structured self-feedback drafts
+  - Choose between local LM Studio or OpenAI (GPT-4o) models
   - Generate summaries organized by section (Summary, Growth, Achievements, Future Goals)
   - Upload previous HR self-feedback for context-aware summaries
   - Customize prompts for personalized summary generation
@@ -35,6 +36,7 @@ An open-source task tracking tool designed to help individuals and teams log dai
 ### Prerequisites
 - Node.js (v18 or newer)
 - npm or yarn
+- LM Studio (for local AI processing) or OpenAI API key (for cloud AI processing)
 
 ### Steps
 
@@ -55,7 +57,9 @@ An open-source task tracking tool designed to help individuals and teams log dai
    
    First, rename the `.env.sample` file to `.env`.
 
-   Then run:
+   Then, update the `PERIOD_START_DATE` and `NEXT_START_DATE` values to match your current reporting period (default to 2-weeks).
+
+   Finally, run:
    ```bash
    npx prisma generate
    npx prisma migrate dev --name init
@@ -72,7 +76,19 @@ An open-source task tracking tool designed to help individuals and teams log dai
 
    This will populate the database with task types, tags, and initialize the reporting period.
 
-5. **Build and run the server**
+5. **Configure AI Integration**
+
+   For **LM Studio** (local AI, default option):
+   - Install LM Studio from [lmstudio.ai](https://lmstudio.ai)
+   - Launch LM Studio and start the local server
+   - The default endpoint is set to `http://localhost:1234/v1/chat/completions`
+
+   For **OpenAI** (cloud AI):
+   - Edit the `.env` file
+   - Add your OpenAI API key to `NEXT_PUBLIC_OPENAI_API_KEY`
+   - Restart the development server after adding the API key
+
+6. **Build and run the server**
    
    For development:
    ```bash
@@ -90,7 +106,7 @@ An open-source task tracking tool designed to help individuals and teams log dai
    yarn start
    ```
 
-6. **Access the application**
+7. **Access the application**
    
    Open [http://localhost:3000](http://localhost:3000) in your browser. You will be automatically redirected to the /tasks page.
 
@@ -117,6 +133,7 @@ An open-source task tracking tool designed to help individuals and teams log dai
 5. **Using AI Summarization:**
    - On the Task Tracker page, filter tasks by date range and/or other filters and click the "Filter" button
    - Click the "AI Summary" button to navigate to the AI Task Summary page
+   - Select your preferred AI model (LM Studio or OpenAI GPT-4o)
    - Review the auto-generated task summary
    - Optionally upload a previous HR self-feedback file (.md) for additional context
    - Send to AI to generate a structured self-feedback draft
