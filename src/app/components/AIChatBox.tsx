@@ -2,6 +2,11 @@
 
 import { useState, useEffect } from 'react';
 
+// Environment variables (these will be loaded by Next.js at build time)
+const LM_STUDIO_API_ENDPOINT = process.env.NEXT_PUBLIC_LM_STUDIO_API_ENDPOINT || 'http://localhost:1234/v1/chat/completions';
+const OPENAI_API_ENDPOINT = process.env.NEXT_PUBLIC_OPENAI_API_ENDPOINT || 'https://api.openai.com/v1/chat/completions';
+const OPENAI_API_KEY = process.env.NEXT_PUBLIC_OPENAI_API_KEY || '';
+
 interface AIChatBoxProps {
   prompt: string;
   content: string;
@@ -10,6 +15,7 @@ interface AIChatBoxProps {
   onPromptEdit?: (newPrompt: string) => void;
   onSendToAI?: (response: string) => void;
   onLoadingStateChange?: (loading: boolean) => void;
+  selectedModel?: 'lm-studio' | 'openai-gpt4o';
 }
 
 export default function AIChatBox({ 
@@ -19,7 +25,8 @@ export default function AIChatBox({
   onEdit, 
   onPromptEdit, 
   onSendToAI, 
-  onLoadingStateChange 
+  onLoadingStateChange,
+  selectedModel = 'lm-studio'
 }: AIChatBoxProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedPrompt, setEditedPrompt] = useState(prompt);
@@ -80,13 +87,21 @@ export default function AIChatBox({
         finalPrompt = finalPrompt.replace(/Here is a brief summary of my previous HR feedback, to use as context:\n%SUMMARIZED_PREVIOUS_FEEDBACK%\n\n/g, '');
       }
       
-      // Call the LM Studio API
-      const response = await fetch('http://localhost:1234/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      // Determine which API endpoint to use based on selected model
+      const endpoint = selectedModel === 'lm-studio' ? LM_STUDIO_API_ENDPOINT : OPENAI_API_ENDPOINT;
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      
+      // Add authentication for OpenAI
+      if (selectedModel === 'openai-gpt4o') {
+        headers['Authorization'] = `Bearer ${OPENAI_API_KEY}`;
+      }
+      
+      // Prepare the body based on the selected model
+      let body;
+      if (selectedModel === 'lm-studio') {
+        body = JSON.stringify({
           model: 'meta-llama-3.1-8b-instruct',
           messages: [
             {
@@ -95,11 +110,37 @@ export default function AIChatBox({
             }
           ],
           temperature: 0.7,
-        }),
+        });
+      } else {
+        body = JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'user',
+              content: finalPrompt
+            }
+          ],
+          temperature: 0.7,
+        });
+      }
+      
+      // Call the API
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers,
+        body,
       });
       
       if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        console.error('API Error Details:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData,
+          endpoint,
+          hasApiKey: selectedModel === 'openai-gpt4o' ? !!OPENAI_API_KEY : 'N/A',
+        });
+        throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
       }
       
       const data = await response.json();
@@ -107,9 +148,23 @@ export default function AIChatBox({
       
       // Pass the AI response back to the parent
       onSendToAI(aiResponse);
-    } catch (error) {
-      console.error('Error calling LM Studio API:', error);
-      alert('Failed to get AI summary. Make sure LM Studio is running and the API endpoint is accessible.');
+    } catch (error: unknown) {
+      console.error(`Error calling ${selectedModel} API:`, error);
+      
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      // Provide more specific error messages based on error type
+      if (selectedModel === 'openai-gpt4o') {
+        if (!OPENAI_API_KEY || OPENAI_API_KEY === '') {
+          alert('OpenAI API key is missing. Please add your API key to the .env.local file with NEXT_PUBLIC_OPENAI_API_KEY.');
+        } else if (errorMessage.includes('401')) {
+          alert('OpenAI API authentication failed. Please check that your API key is valid and properly formatted.');
+        } else {
+          alert(`Failed to get AI summary from OpenAI: ${errorMessage}`);
+        }
+      } else {
+        alert(`Failed to get AI summary from LM Studio. Make sure LM Studio is running and the API endpoint is accessible.`);
+      }
     } finally {
       setIsLoading(false);
     }

@@ -4,6 +4,15 @@ import { useState, useRef } from 'react';
 import Link from 'next/link';
 import AIChatBox from '@/app/components/AIChatBox';
 import CollapsibleText from '@/app/components/CollapsibleText';
+import ApiKeyCheck from '@/app/components/ApiKeyCheck';
+
+// Model options type
+type AIModel = 'lm-studio' | 'openai-gpt4o';
+
+// Environment variables (these will be loaded by Next.js at build time)
+const LM_STUDIO_API_ENDPOINT = process.env.NEXT_PUBLIC_LM_STUDIO_API_ENDPOINT || 'http://localhost:1234/v1/chat/completions';
+const OPENAI_API_ENDPOINT = process.env.NEXT_PUBLIC_OPENAI_API_ENDPOINT || 'https://api.openai.com/v1/chat/completions';
+const OPENAI_API_KEY = process.env.NEXT_PUBLIC_OPENAI_API_KEY || '';
 
 export default function SummaryPageClient({
   initialTextReport,
@@ -17,6 +26,7 @@ export default function SummaryPageClient({
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [previousFeedback, setPreviousFeedback] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedModel, setSelectedModel] = useState<AIModel>('lm-studio');
   
   const [aiPrompt, setAiPrompt] = useState(`You are a helpful assistant summarizing a work report for an HR self-feedback draft.
 
@@ -49,6 +59,11 @@ Generate a short summary paragraph in first-person voice, organized into the fol
     setIsLoading(loading);
   };
 
+  // Handle model selection change
+  const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedModel(e.target.value as AIModel);
+  };
+
   // Handle file selection
   const handleFileSelect = () => {
     fileInputRef.current?.click();
@@ -75,7 +90,7 @@ Generate a short summary paragraph in first-person voice, organized into the fol
       // Parse and clean the markdown content
       const parsedContent = fileContent.trim();
       
-      // Call LM Studio API to summarize previous feedback
+      // Call API to summarize previous feedback
       const summarizedFeedback = await summarizePreviousFeedback(parsedContent);
       
       // Update the AI prompt to include the previous feedback summary
@@ -126,7 +141,7 @@ Generate a short summary paragraph in first-person voice, organized into the fol
     });
   };
 
-  // Send previous feedback to LM Studio for summarization
+  // Send previous feedback to AI for summarization
   const summarizePreviousFeedback = async (feedbackContent: string): Promise<string> => {
     const prompt = `You are an assistant helping to condense past HR self-feedback for reuse in a new summary.
 
@@ -141,12 +156,20 @@ Summarize each of the following sections in 1–2 sentences each (if available):
 Use a neutral tone and first-person voice. Keep it short, suitable for use as context in a new self-feedback draft.`;
 
     try {
-      const response = await fetch('http://localhost:1234/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const endpoint = selectedModel === 'lm-studio' ? LM_STUDIO_API_ENDPOINT : OPENAI_API_ENDPOINT;
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      
+      // Add authentication for OpenAI
+      if (selectedModel === 'openai-gpt4o') {
+        headers['Authorization'] = `Bearer ${OPENAI_API_KEY}`;
+      }
+      
+      // Prepare the body based on the selected model
+      let body;
+      if (selectedModel === 'lm-studio') {
+        body = JSON.stringify({
           model: 'meta-llama-3.1-8b-instruct',
           messages: [
             {
@@ -155,7 +178,24 @@ Use a neutral tone and first-person voice. Keep it short, suitable for use as co
             }
           ],
           temperature: 0.7,
-        }),
+        });
+      } else {
+        body = JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.7,
+        });
+      }
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers,
+        body,
       });
       
       if (!response.ok) {
@@ -165,8 +205,8 @@ Use a neutral tone and first-person voice. Keep it short, suitable for use as co
       const data = await response.json();
       return data.choices[0]?.message?.content.trim() || 'No response from AI';
     } catch (error) {
-      console.error('Error calling LM Studio API for feedback summarization:', error);
-      throw new Error('Failed to summarize previous feedback');
+      console.error(`Error calling ${selectedModel} API for feedback summarization:`, error);
+      throw new Error(`Failed to summarize previous feedback using ${selectedModel}`);
     }
   };
 
@@ -186,6 +226,31 @@ Use a neutral tone and first-person voice. Keep it short, suitable for use as co
         </div>
 
         <div className="space-y-6">
+          {/* API Key Check */}
+          <ApiKeyCheck />
+          
+          {/* AI Model Selection Dropdown */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">AI Model Selection</h2>
+            <div className="max-w-xs">
+              <label htmlFor="model-selector" className="block text-sm font-medium text-gray-700 mb-1">
+                Select AI Model
+              </label>
+              <select
+                id="model-selector"
+                value={selectedModel}
+                onChange={handleModelChange}
+                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm rounded-md text-gray-900"
+              >
+                <option value="lm-studio" className="text-gray-900">LM Studio</option>
+                <option value="openai-gpt4o" className="text-gray-900">OpenAI (GPT-4o)</option>
+              </select>
+              <p className="mt-2 text-sm text-gray-500">
+                Choose the AI model you want to use for generating summaries.
+              </p>
+            </div>
+          </div>
+
           {/* AI Chat Box */}
           <AIChatBox
             prompt={aiPrompt}
@@ -195,6 +260,7 @@ Use a neutral tone and first-person voice. Keep it short, suitable for use as co
             onPromptEdit={handlePromptEdit}
             onSendToAI={handleAIResponse}
             onLoadingStateChange={handleLoadingState}
+            selectedModel={selectedModel}
           />
 
           {/* Previous Feedback File Upload Section */}
