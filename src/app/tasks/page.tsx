@@ -3,6 +3,7 @@ import TaskForm from '../components/TaskForm';
 import TaskList from '../components/TaskList';
 import TasksHeader from '../components/TasksHeader';
 import { TaskProvider } from '../lib/TaskContext';
+import Notification from '../components/Notification';
 
 export const metadata: Metadata = {
   title: 'Task Tracker',
@@ -18,17 +19,23 @@ export default function TasksPage() {
         </div>
 
         <TaskProvider>
-          <div className="space-y-8">
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-4 py-5 sm:p-6">
-                <TaskForm />
-              </div>
+          <div className="relative">
+            <div className="sticky top-0 z-50">
+              <Notification />
             </div>
+            
+            <div className="space-y-8">
+              <div className="bg-white rounded-lg shadow">
+                <div className="px-4 py-5 sm:p-6">
+                  <TaskForm />
+                </div>
+              </div>
 
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-4 py-5 sm:p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Tasks</h2>
-                <TaskList />
+              <div className="bg-white rounded-lg shadow">
+                <div className="px-4 py-5 sm:p-6">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Tasks</h2>
+                  <TaskList />
+                </div>
               </div>
             </div>
           </div>

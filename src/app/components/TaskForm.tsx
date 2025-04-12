@@ -17,7 +17,7 @@ interface Tag {
 }
 
 export default function TaskForm() {
-  const { triggerRefresh } = useTaskContext();
+  const { triggerRefresh, showNotification } = useTaskContext();
   const [formData, setFormData] = useState({
     description: '',
     type: '',
@@ -49,12 +49,13 @@ export default function TaskForm() {
       } catch (err) {
         console.error('Error loading form data:', err);
         setError('Failed to load task types and tags. Please try again.');
+        showNotification('error', 'Failed to load task types and tags');
       } finally {
         setIsLoading(false);
       }
     };
     fetchData();
-  }, []);
+  }, [showNotification]);
 
   useEffect(() => {
     if (tagInput.trim()) {
@@ -211,10 +212,13 @@ export default function TaskForm() {
       });
       // Trigger refresh of the task list
       triggerRefresh();
-      alert('Task added successfully!');
+      // Show success notification instead of alert
+      showNotification('success', 'Task added successfully!');
     } catch (err) {
       console.error('Error adding task:', err);
       setError('Failed to add task. Please try again.');
+      // Show error notification
+      showNotification('error', 'Failed to add task. Please try again.');
     } finally {
       setIsLoading(false);
     }

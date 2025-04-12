@@ -284,7 +284,7 @@ function EditModal({ task, taskTypes, tags, onClose, onSave }: EditModalProps) {
 type DateFilter = 'today' | 'current-period' | 'custom';
 
 export default function TaskList() {
-  const { refreshTrigger } = useTaskContext();
+  const { refreshTrigger, showNotification } = useTaskContext();
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskTypes, setTaskTypes] = useState<{ name: string; label: string; }[]>([]);
@@ -315,11 +315,41 @@ export default function TaskList() {
       } catch (err) {
         console.error('Error loading filter data:', err);
         setError('Failed to load task types and tags');
+        showNotification('error', 'Failed to load task types and tags');
       }
     };
     
     loadData();
-  }, []);
+  }, [showNotification]);
+
+  // Helper function to apply the current date filter and fetch tasks
+  const fetchTasksWithCurrentFilter = async () => {
+    let startDate: Date | undefined;
+    let endDate: Date | undefined;
+
+    if (dateFilter === 'today') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      startDate = today;
+      endDate = new Date(today);
+      endDate.setHours(23, 59, 59, 999);
+    } else if (dateFilter === 'current-period') {
+      const { periodStart, periodEnd } = await getLockedReportingPeriodAction();
+      startDate = periodStart;
+      endDate = periodEnd;
+    } else if (dateFilter === 'custom') {
+      // For custom filter, use the dates from the filters state
+      startDate = filters.startDate || undefined;
+      endDate = filters.endDate || undefined;
+    }
+
+    return await fetchTasks({
+      type: filters.type || undefined,
+      tag: filters.tag || undefined,
+      startDate: startDate,
+      endDate: endDate,
+    });
+  };
 
   // Fetch tasks whenever filters change or refreshTrigger changes
   useEffect(() => {
@@ -328,32 +358,7 @@ export default function TaskList() {
       setError(null);
       
       try {
-        let startDate: Date | undefined;
-        let endDate: Date | undefined;
-
-        if (dateFilter === 'today') {
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          startDate = today;
-          endDate = new Date(today);
-          endDate.setHours(23, 59, 59, 999);
-        } else if (dateFilter === 'current-period') {
-          const { periodStart, periodEnd } = await getLockedReportingPeriodAction();
-          startDate = periodStart;
-          endDate = periodEnd;
-        } else if (dateFilter === 'custom') {
-          // For custom filter, use the dates from the filters state
-          startDate = filters.startDate || undefined;
-          endDate = filters.endDate || undefined;
-        }
-
-        const filteredTasks = await fetchTasks({
-          type: filters.type || undefined,
-          tag: filters.tag || undefined,
-          startDate: startDate || undefined,
-          endDate: endDate || undefined,
-        });
-        
+        const filteredTasks = await fetchTasksWithCurrentFilter();
         setTasks(filteredTasks);
       } catch (err) {
         console.error('Error fetching filtered tasks:', err);
@@ -398,34 +403,28 @@ export default function TaskList() {
   }) => {
     try {
       await updateTask(updatedTask);
-      // Refresh the task list
-      const filteredTasks = await fetchTasks({
-        type: filters.type || undefined,
-        tag: filters.tag || undefined,
-        startDate: filters.startDate || undefined,
-        endDate: filters.endDate || undefined,
-      });
+      // Refresh the task list with current filters
+      const filteredTasks = await fetchTasksWithCurrentFilter();
       setTasks(filteredTasks);
+      showNotification('success', 'Task updated successfully');
     } catch (err) {
       console.error('Error updating task:', err);
       setError('Failed to update task');
+      showNotification('error', 'Failed to update task');
     }
   };
 
   const handleDeleteTask = async (taskId: string) => {
     try {
       await deleteTask(taskId);
-      // Refresh the task list
-      const filteredTasks = await fetchTasks({
-        type: filters.type || undefined,
-        tag: filters.tag || undefined,
-        startDate: filters.startDate || undefined,
-        endDate: filters.endDate || undefined,
-      });
+      // Refresh the task list with current filters
+      const filteredTasks = await fetchTasksWithCurrentFilter();
       setTasks(filteredTasks);
+      showNotification('success', 'Task deleted successfully');
     } catch (err) {
       console.error('Error deleting task:', err);
       setError('Failed to delete task');
+      showNotification('error', 'Failed to delete task');
     } finally {
       setDeletingTaskId(null);
     }
