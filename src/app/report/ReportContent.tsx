@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { fetchTasks, getLockedReportingPeriodAction } from '@/app/tasks/actions';
-import { generateReportHTML } from '@/app/tasks/report';
+import { generateReportHTML, generateReportMarkdown, TaskWithType } from '@/app/tasks/report';
 import ReportView from '@/app/components/ReportView';
 
 export default function ReportContent() {
   const [reportHTML, setReportHTML] = useState<string>('');
+  const [tasks, setTasks] = useState<TaskWithType[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -53,15 +54,18 @@ export default function ReportContent() {
         }
         
         // Fetch tasks with the specified filters
-        const tasks = await fetchTasks({
+        const fetchedTasks = await fetchTasks({
           startDate,
           endDate,
           type,
           tag
         });
         
+        // Store the fetched tasks in state
+        setTasks(fetchedTasks);
+        
         // Generate HTML report
-        const html = generateReportHTML(tasks);
+        const html = generateReportHTML(fetchedTasks);
         
         // Store the generated HTML in state
         setReportHTML(html);
@@ -77,8 +81,11 @@ export default function ReportContent() {
   }, [searchParams]);
 
   const handleDownloadReport = () => {
-    // Create a blob from the HTML content
-    const blob = new Blob([reportHTML], { type: 'text/html' });
+    // Generate Markdown content for the report
+    const markdownContent = generateReportMarkdown(tasks);
+    
+    // Create a blob from the Markdown content
+    const blob = new Blob([markdownContent], { type: 'text/markdown' });
     
     // Create a URL for the blob
     const url = URL.createObjectURL(blob);
@@ -86,7 +93,7 @@ export default function ReportContent() {
     // Create a temporary link element
     const a = document.createElement('a');
     a.href = url;
-    a.download = `task-report-${new Date().toISOString().split('T')[0]}.html`;
+    a.download = `task-report-${new Date().toISOString().split('T')[0]}.md`;
     
     // Append to body, click, and remove
     document.body.appendChild(a);

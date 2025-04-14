@@ -7,7 +7,7 @@ interface Task {
   createdAt: Date;
 }
 
-interface TaskWithType extends Task {
+export interface TaskWithType extends Task {
   type: {
     name: string;
     label: string;
@@ -41,11 +41,11 @@ export function generateReportHTML(tasks: TaskWithType[]): string {
   const groupedTasks = groupTasksByType(tasks);
   let html = '';
 
-  // Sort task types by their name for consistent ordering
-  const sortedTypes = Object.entries(groupedTasks).sort(([a], [b]) => a.localeCompare(b));
+  // Don't sort types by name, preserve insertion order from database
+  const taskTypeEntries = Object.entries(groupedTasks);
 
   // Add each task type section
-  for (const [, { label, tasks: originalTasks }] of sortedTypes) {
+  for (const [, { label, tasks: originalTasks }] of taskTypeEntries) {
     if (originalTasks.length > 0) {
       html += `<h3>${label}</h3>`;
       
@@ -98,4 +98,63 @@ export function generateReportHTML(tasks: TaskWithType[]): string {
   }
 
   return html;
+}
+
+export function generateReportMarkdown(tasks: TaskWithType[]): string {
+  const groupedTasks = groupTasksByType(tasks);
+  let markdown = '';
+
+  // Don't sort types by name, preserve insertion order from database
+  const taskTypeEntries = Object.entries(groupedTasks);
+
+  // Add each task type section
+  for (const [, { label, tasks: originalTasks }] of taskTypeEntries) {
+    if (originalTasks.length > 0) {
+      markdown += `### ${label}\n\n`;
+      
+      // Special handling for MANUAL_REVIEW_WORK type
+      if (label === 'Manual Review Work') {
+        // Filter Slack ping tasks
+        const slackPingTasks = originalTasks.filter(task => 
+          task.tags.some(tag => tag.tag.name === 'slack-ping')
+        );
+        
+        // Filter out Slack ping tasks for the regular list
+        const filteredTasks = originalTasks.filter(task => 
+          !task.tags.some(tag => tag.tag.name === 'slack-ping')
+        );
+        
+        // Sort tasks by date in ascending order
+        const sortedTasks = filteredTasks.sort((a, b) => a.date.getTime() - b.date.getTime());
+        
+        // Add Slack ping summary as the first bullet point if there are any
+        if (slackPingTasks.length > 0) {
+          markdown += `- ${slackPingTasks.length} Slack ${slackPingTasks.length === 1 ? 'ping' : 'pings'} answered\n`;
+        }
+        
+        // Add the rest of the tasks
+        for (const task of sortedTasks) {
+          const link = task.link ? ` [#](${task.link})` : '';
+          const description = task.description || '(No description)';
+          markdown += `- ${description}${link}\n`;
+        }
+        
+        markdown += '\n';
+      } else {
+        // For non-MANUAL_REVIEW_WORK types, just show all tasks
+        // Sort tasks by date in ascending order
+        const sortedTasks = originalTasks.sort((a, b) => a.date.getTime() - b.date.getTime());
+        
+        for (const task of sortedTasks) {
+          const link = task.link ? ` [#](${task.link})` : '';
+          const description = task.description || '(No description)';
+          markdown += `- ${description}${link}\n`;
+        }
+        
+        markdown += '\n';
+      }
+    }
+  }
+
+  return markdown;
 } 
