@@ -65,7 +65,7 @@ export default function ReportContent() {
         setTasks(fetchedTasks);
         
         // Generate HTML report
-        const html = generateReportHTML(fetchedTasks);
+        const html = await generateReportHTML(fetchedTasks);
         
         // Store the generated HTML in state
         setReportHTML(html);
@@ -80,9 +80,9 @@ export default function ReportContent() {
     generateReport();
   }, [searchParams]);
 
-  const handleDownloadReport = () => {
+  const handleDownloadReport = async () => {
     // Generate Markdown content for the report
-    const markdownContent = generateReportMarkdown(tasks);
+    const markdownContent = await generateReportMarkdown(tasks);
     
     // Create a blob from the Markdown content
     const blob = new Blob([markdownContent], { type: 'text/markdown' });

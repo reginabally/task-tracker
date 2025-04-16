@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, KeyboardEvent, useRef } from 'react';
+import { useState, useEffect, KeyboardEvent, useRef, useCallback } from 'react';
 import { format } from 'date-fns';
 import TaskFilters from './TaskFilters';
 import { fetchTasks, getAllTaskTypes, getAllTags, updateTask, deleteTask, getLockedReportingPeriodAction } from '@/app/tasks/actions';
@@ -323,7 +323,7 @@ export default function TaskList() {
   }, [showNotification]);
 
   // Helper function to apply the current date filter and fetch tasks
-  const fetchTasksWithCurrentFilter = async () => {
+  const fetchTasksWithCurrentFilter = useCallback(async () => {
     let startDate: Date | undefined;
     let endDate: Date | undefined;
 
@@ -349,7 +349,7 @@ export default function TaskList() {
       startDate: startDate,
       endDate: endDate,
     });
-  };
+  }, [dateFilter, filters]);
 
   // Fetch tasks whenever filters change or refreshTrigger changes
   useEffect(() => {
@@ -369,7 +369,7 @@ export default function TaskList() {
     };
     
     loadTasks();
-  }, [dateFilter, filters, refreshTrigger]);
+  }, [dateFilter, filters, refreshTrigger, fetchTasksWithCurrentFilter]);
 
   const handleFilterChange = (newFilters: {
     type: string;

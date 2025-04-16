@@ -26,7 +26,7 @@ export default function AIChatBox({
   onPromptEdit, 
   onSendToAI, 
   onLoadingStateChange,
-  selectedModel = 'lm-studio'
+  selectedModel = 'openai-gpt4o'
 }: AIChatBoxProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedPrompt, setEditedPrompt] = useState(prompt);

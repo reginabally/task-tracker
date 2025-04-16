@@ -24,6 +24,8 @@ An open-source task tracking tool designed to help individuals and teams log dai
 - **Reporting:** Generate formatted reports grouped by task type
 - **Fixed Reporting Periods:** Automatically track 2-week reporting cycles
 - **Dynamic Tags:** Create new tags on-the-fly during task entry
+- **Task Automation:** Automatically assign categories and tags based on patterns in task descriptions or links
+- **Comprehensive Settings:** Configure categories, tags, reporting periods, and automation rules
 - **AI Summarization:** Transform task lists into structured self-feedback drafts
   - Choose between local LM Studio or OpenAI (GPT-4o) models
   - Generate summaries organized by section (Summary, Growth, Achievements, Future Goals)
@@ -58,8 +60,6 @@ An open-source task tracking tool designed to help individuals and teams log dai
    
    First, rename the `.env.sample` file to `.env`.
 
-   Then, update the `PERIOD_START_DATE` and `NEXT_START_DATE` values to match your current reporting period (default to 2-weeks).
-
    Finally, run:
    ```bash
    npx prisma generate
@@ -68,7 +68,7 @@ An open-source task tracking tool designed to help individuals and teams log dai
 
 4. **Import seed data**
 
-   Review and edit the seed data for task types and tags in `/prisma/seed.ts` if needed. Change the reporting period in `.env`.
+   Review and edit the seed data for task types and tags in `/prisma/seed.ts` if needed.
 
    Then run:
    ```bash
@@ -140,3 +140,16 @@ An open-source task tracking tool designed to help individuals and teams log dai
    - Send to AI to generate a structured self-feedback draft
    - The AI will organize your content into Summary, Growth, Achievements, and Future Goals sections
    - Use the "Download as Markdown" button to save the AI summary to your computer
+
+6. **Configuring Settings:**
+   - Access the Settings page via the navigation menu
+   - **General Settings:** Configure basic application settings (reporting start date for now)
+   - **Categories:** Manage task categories (add, edit, delete, and reorder)
+   - **Tags:** Organize and manage tags for task categorization
+   - **Automation:** Create and manage task automation rules
+
+7. **Task Automation Rules:**
+   - Set up patterns to automatically assign categories and tags when they appear in task descriptions or links
+   - Create multiple rules with different triggers (description or link field)
+   - Rules are applied in real-time as you type in the task form
+   - Streamlines categorization for recurring task types

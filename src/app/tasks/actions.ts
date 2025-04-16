@@ -1,12 +1,30 @@
 'use server';
 
 // actions.ts
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/app/lib/prisma';
 
 export async function getAllTaskTypes() {
-  return await prisma.taskType.findMany({
-    select: { name: true, label: true }
-  });
+  // Get all task types - let the frontend sort by order
+  return await prisma.taskType.findMany();
+}
+
+/**
+ * Gets all task types ordered by their sortOrder field and then by label
+ */
+export async function getOrderedTaskTypes() {
+  try {
+    // Use $queryRaw to get task types ordered by sortOrder field
+    const taskTypes = await prisma.$queryRaw`
+      SELECT id, name, label, "sortOrder" 
+      FROM "TaskType" 
+      ORDER BY "sortOrder" ASC, label ASC
+    `;
+    
+    return taskTypes as { id: string; name: string; label: string; sortOrder: number }[];
+  } catch (error) {
+    console.error('Error fetching ordered task types:', error);
+    return [];
+  }
 }
 
 export async function getAllTags() {

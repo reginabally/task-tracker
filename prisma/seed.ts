@@ -13,100 +13,93 @@ function getLastFriday(date: Date): Date {
   return lastFriday;
 }
 
-// Helper: Parse date string in YYYY-MM-DD format
-function parseDate(dateStr: string): Date {
-  const [year, month, day] = dateStr.split('-').map(Number);
-  return new Date(year, month - 1, day);
-}
-
 async function main() {
-  // Seed task types
-  await prisma.taskType.createMany({
-    data: [
-      { name: 'MANUAL_REVIEW_WORK', label: 'Manual Review Work' },
-      { name: 'SQUAD', label: 'Compliance Squad Work' },
-      { name: 'COMMUNICATION', label: 'Communication' },
-      { name: 'PROJECT', label: 'Project' },
-      { name: 'LEARNING', label: 'Learning' },
-      { name: 'DOCUMENTATION', label: 'Documentation' },
-      { name: 'OTHERS', label: 'Others' }
-    ]
-  });
+  try {
+    // Reset database - handle foreign key constraints
+    // Delete in proper order to respect relations
+    await prisma.taskTag.deleteMany({});
+    await prisma.task.deleteMany({});
+    await prisma.tag.deleteMany({});
+    await prisma.taskType.deleteMany({});
+    
+    // Seed task types with alphabetical ordering
+    const taskTypes = [
+      { name: 'COMMUNICATION', label: 'Communication', sortOrder: 0 },
+      { name: 'DOCUMENTATION', label: 'Documentation', sortOrder: 1 },
+      { name: 'LEARNING', label: 'Learning', sortOrder: 2 },
+      { name: 'MANUAL_REVIEW_WORK', label: 'Manual Review Work', sortOrder: 3 },
+      { name: 'OTHERS', label: 'Others', sortOrder: 4 },
+      { name: 'PROJECT', label: 'Project', sortOrder: 5 },
+      { name: 'SQUAD', label: 'Compliance Squad Work', sortOrder: 6 }
+    ];
+    
+    // Insert each task type individually
+    for (const taskType of taskTypes) {
+      await prisma.taskType.create({
+        data: taskType
+      });
+    }
+    
+    // Seed tags
+    await prisma.tag.createMany({
+      data: [
+        { name: 'slack-ping', label: 'Slack Ping' },
+        { name: 'ticket', label: 'Ticket' },
+        { name: 'gut-check', label: 'Gut Check' },
+        { name: 'p2-post', label: 'P2 Post' },
+        { name: 'p2-discussion', label: 'P2 Discussion' },
+        { name: 'slack-discussion', label: 'Slack Discussion' },
+        { name: 'team-call', label: 'Team Call' },
+        { name: '1-1', label: '1:1' },
+        { name: 'internal-tools', label: 'Internal Tools' },
+        { name: 'workflow-improvement', label: 'Workflow Improvement' },
+        { name: 'buddying', label: 'Buddying' },
+        { name: 'tool-exploration', label: 'Tool Exploration' },
+        { name: 'deep-dive', label: 'Deep Dive' },
+        { name: 'shared-insight', label: 'Shared Insight' },
+        { name: 'fraud-pattern', label: 'Fraud Pattern' },
+        { name: 'webinar', label: 'Webinar' },
+        { name: 'e-learning', label: 'e-Learning' },
+        { name: 'coaching', label: 'Coaching' },
+        { name: 'reading', label: 'Reading' },
+        { name: 'fu-update', label: 'Fraudsquad University Update' },
+        { name: 'survey', label: 'Survey' },
+        { name: 'admin', label: 'Admin Tasks' },
+        { name: 'hr-feedback', label: 'HR Feedback' },
+        { name: 'ai', label: 'AI' },
+        { name: 'data-analysis', label: 'Data Analysis' },
+        { name: 'meetup', label: 'Meetup' },
+        { name: 'event', label: 'Event' },
+        { name: 'other', label: 'Other' }
+      ]
+    });
 
-  // Seed tags
-  await prisma.tag.createMany({
-    data: [
-      { name: 'slack-ping', label: 'Slack Ping' },
-      { name: 'ticket', label: 'Ticket' },
-      { name: 'gut-check', label: 'Gut Check' },
-      { name: 'p2-post', label: 'P2 Post' },
-      { name: 'p2-discussion', label: 'P2 Discussion' },
-      { name: 'slack-discussion', label: 'Slack Discussion' },
-      { name: 'team-call', label: 'Team Call' },
-      { name: '1-1', label: '1:1' },
-      { name: 'internal-tools', label: 'Internal Tools' },
-      { name: 'workflow-improvement', label: 'Workflow Improvement' },
-      { name: 'buddying', label: 'Buddying' },
-      { name: 'tool-exploration', label: 'Tool Exploration' },
-      { name: 'deep-dive', label: 'Deep Dive' },
-      { name: 'shared-insight', label: 'Shared Insight' },
-      { name: 'fraud-pattern', label: 'Fraud Pattern' },
-      { name: 'webinar', label: 'Webinar' },
-      { name: 'e-learning', label: 'e-Learning' },
-      { name: 'coaching', label: 'Coaching' },
-      { name: 'reading', label: 'Reading' },
-      { name: 'fu-update', label: 'Fraudsquad University Update' },
-      { name: 'survey', label: 'Survey' },
-      { name: 'admin', label: 'Admin Tasks' },
-      { name: 'hr-feedback', label: 'HR Feedback' },
-      { name: 'ai', label: 'AI' },
-      { name: 'data-analysis', label: 'Data Analysis' },
-      { name: 'meetup', label: 'Meetup' },
-      { name: 'event', label: 'Event' },
-      { name: 'other', label: 'Other' }
-    ]
-  });
-
-  // Initialize reporting period
-  // Check for environment variables for manual date entry
-  const periodStartStr = process.env.PERIOD_START_DATE;
-  const nextStartDateStr = process.env.NEXT_START_DATE;
-  
-  let periodStart: Date;
-  let nextStartDate: Date;
-  
-  if (periodStartStr && nextStartDateStr) {
-    // Use manually provided dates
-    periodStart = parseDate(periodStartStr);
-    nextStartDate = parseDate(nextStartDateStr);
-  } else {
-    // Fall back to automatic calculation
+    // Initialize reporting period
+    // Calculate reporting period automatically
     const today = new Date();
-    periodStart = getLastFriday(today);
-    nextStartDate = addDays(periodStart, 14);
-  }
+    const periodStart = getLastFriday(today);
+    const nextStartDate = addDays(periodStart, 14);
 
-  await prisma.reportingPeriod.upsert({
-    where: { id: 1 },
-    update: {},
-    create: {
-      id: 1,
-      periodStart,
-      nextStartDate,
-    },
-  });
+    await prisma.reportingPeriod.upsert({
+      where: { id: 1 },
+      update: {},
+      create: {
+        id: 1,
+        periodStart,
+        nextStartDate,
+      },
+    });
 
-  console.log("✅ Reporting period initialized:", {
-    periodStart: periodStart.toISOString().split("T")[0],
-    nextStartDate: nextStartDate.toISOString().split("T")[0],
-  });
-}
-
-main()
-  .catch((e) => {
+    console.log("✅ Reporting period initialized:", {
+      periodStart: periodStart.toISOString().split("T")[0],
+      nextStartDate: nextStartDate.toISOString().split("T")[0],
+    });
+  } catch (e) {
     console.error("❌ Error seeding database:", e);
     process.exit(1);
-  })
-  .finally(async () => {
+  } finally {
     await prisma.$disconnect();
-  });
+  }
+}
+
+main();

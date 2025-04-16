@@ -8,17 +8,20 @@ datasource db {
 }
 
 model TaskType {
-  id     String   @id @default(cuid())
-  name   String   @unique            // e.g. "MANUAL_REVIEW_WORK"
-  label  String                      // e.g. "Manual Review Work"
-  tasks  Task[]
+  id              String           @id @default(cuid())
+  name            String           @unique // e.g. "MANUAL_REVIEW_WORK"
+  label           String // e.g. "Manual Review Work"
+  sortOrder       Int              @default(0) // Custom display order, defaults to 0
+  tasks           Task[]
+  automationRules AutomationRule[]
 }
 
 model Tag {
-  id     String   @id @default(cuid())
-  name   String   @unique            // e.g. "fraud-pattern"
-  label  String                      // e.g. "Fraud Pattern"
-  tasks  TaskTag[]
+  id              String              @id @default(cuid())
+  name            String              @unique // e.g. "fraud-pattern"
+  label           String // e.g. "Fraud Pattern"
+  tasks           TaskTag[]
+  automationRules AutomationRuleTag[]
 }
 
 model Task {
@@ -43,10 +46,29 @@ model TaskTag {
 }
 
 model ReportingPeriod {
-  id             Int      @id @default(1)
-  periodStart    DateTime
-  nextStartDate  DateTime
-  updatedAt      DateTime @updatedAt
+  id            Int      @id @default(1)
+  periodStart   DateTime
+  nextStartDate DateTime
+  updatedAt     DateTime @updatedAt
 }
 
+model AutomationRule {
+  id        Int                 @id @default(autoincrement())
+  trigger   String // 'link' or 'description'
+  pattern   String // the string to match
+  type      TaskType            @relation(fields: [typeId], references: [id])
+  typeId    String
+  tags      AutomationRuleTag[]
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+}
 
+model AutomationRuleTag {
+  ruleId Int
+  tagId  String
+
+  rule AutomationRule @relation(fields: [ruleId], references: [id])
+  tag  Tag            @relation(fields: [tagId], references: [id])
+
+  @@id([ruleId, tagId])
+}

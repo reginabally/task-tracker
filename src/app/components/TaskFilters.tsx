@@ -115,13 +115,13 @@ export default function TaskFilters({
       <h2 className="text-lg font-semibold mb-4 text-gray-900">Filter Tasks</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-900 mb-1">Type</label>
+          <label className="block text-sm font-medium text-gray-900 mb-1">Category</label>
           <select
             value={type}
             onChange={handleTypeChange}
             className="w-full p-2 border border-gray-300 rounded-md text-gray-900"
           >
-            <option value="">All Types</option>
+            <option value="">All Categories</option>
             {taskTypes.map((t) => (
               <option key={t.name} value={t.name}>
                 {t.label}

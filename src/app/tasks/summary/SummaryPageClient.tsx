@@ -27,7 +27,7 @@ export default function SummaryPageClient({
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [previousFeedback, setPreviousFeedback] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedModel, setSelectedModel] = useState<AIModel>('lm-studio');
+  const [selectedModel, setSelectedModel] = useState<AIModel>('openai-gpt4o');
   
   const [aiPrompt, setAiPrompt] = useState(`You are a helpful assistant summarizing a work report for an HR self-feedback draft.
 

@@ -11,6 +11,7 @@ export interface TaskWithType extends Task {
   type: {
     name: string;
     label: string;
+    sortOrder?: number;
   } | null;
   tags: {
     tag: {
@@ -20,8 +21,23 @@ export interface TaskWithType extends Task {
   }[];
 }
 
-function groupTasksByType(tasks: TaskWithType[]) {
-  return tasks.reduce((acc, task) => {
+import { getOrderedTaskTypes } from './actions';
+
+/**
+ * Groups tasks by type, ensuring that types are ordered correctly
+ */
+async function groupTasksByTypeOrdered(tasks: TaskWithType[]) {
+  // Get ordered task types
+  const orderedTypes = await getOrderedTaskTypes();
+  
+  // Create a map of type name to order for quick lookups
+  const typeOrderMap = new Map<string, number>();
+  orderedTypes.forEach(type => {
+    typeOrderMap.set(type.name, type.sortOrder);
+  });
+  
+  // Group tasks by type
+  const groupedTasks = tasks.reduce((acc, task) => {
     // Skip tasks with no type
     if (!task.type) return acc;
     
@@ -29,20 +45,24 @@ function groupTasksByType(tasks: TaskWithType[]) {
     if (!acc[typeName]) {
       acc[typeName] = {
         label: task.type.label,
-        tasks: []
+        tasks: [],
+        sortOrder: typeOrderMap.get(typeName) ?? 999 // Use high number as fallback for unknown types
       };
     }
     acc[typeName].tasks.push(task);
     return acc;
-  }, {} as Record<string, { label: string; tasks: TaskWithType[] }>);
+  }, {} as Record<string, { label: string; tasks: TaskWithType[]; sortOrder: number }>);
+  
+  return groupedTasks;
 }
 
-export function generateReportHTML(tasks: TaskWithType[]): string {
-  const groupedTasks = groupTasksByType(tasks);
+export async function generateReportHTML(tasks: TaskWithType[]): Promise<string> {
+  const groupedTasks = await groupTasksByTypeOrdered(tasks);
   let html = '';
 
-  // Don't sort types by name, preserve insertion order from database
-  const taskTypeEntries = Object.entries(groupedTasks);
+  // Sort entries by their sortOrder field
+  const taskTypeEntries = Object.entries(groupedTasks)
+    .sort(([, a], [, b]) => a.sortOrder - b.sortOrder);
 
   // Add each task type section
   for (const [, { label, tasks: originalTasks }] of taskTypeEntries) {
@@ -100,12 +120,13 @@ export function generateReportHTML(tasks: TaskWithType[]): string {
   return html;
 }
 
-export function generateReportMarkdown(tasks: TaskWithType[]): string {
-  const groupedTasks = groupTasksByType(tasks);
+export async function generateReportMarkdown(tasks: TaskWithType[]): Promise<string> {
+  const groupedTasks = await groupTasksByTypeOrdered(tasks);
   let markdown = '';
 
-  // Don't sort types by name, preserve insertion order from database
-  const taskTypeEntries = Object.entries(groupedTasks);
+  // Sort entries by their sortOrder field
+  const taskTypeEntries = Object.entries(groupedTasks)
+    .sort(([, a], [, b]) => a.sortOrder - b.sortOrder);
 
   // Add each task type section
   for (const [, { label, tasks: originalTasks }] of taskTypeEntries) {

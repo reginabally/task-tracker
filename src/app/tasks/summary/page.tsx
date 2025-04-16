@@ -46,7 +46,7 @@ export default async function SummaryPage({ searchParams }: SummaryPageProps) {
   });
   
   // Generate HTML report
-  const htmlReport = generateReportHTML(tasks);
+  const htmlReport = await generateReportHTML(tasks);
   
   // Extract plain text from the report
   const plainTextReport = extractPlainTextFromReport(htmlReport);

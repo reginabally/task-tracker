@@ -1,21 +1,13 @@
 // Import the Task type
 import { Task } from '@/app/types';
+import { getLockedReportingPeriodAction } from '@/app/tasks/actions';
 
-export function getCurrentReportingPeriod(): { periodStart: Date; periodEnd: Date } {
-  const today = new Date();
-  
-  // Find the most recent Friday (including today if it's Friday)
-  const daysUntilFriday = (5 - today.getDay() + 7) % 7;
-  const periodStart = new Date(today);
-  periodStart.setDate(today.getDate() - daysUntilFriday);
-  periodStart.setHours(0, 0, 0, 0);
-  
-  // Set period end to Thursday 13 days after period start
-  const periodEnd = new Date(periodStart);
-  periodEnd.setDate(periodStart.getDate() + 13);
-  periodEnd.setHours(23, 59, 59, 999);
-  
-  return { periodStart, periodEnd };
+/**
+ * @deprecated Use getLockedReportingPeriodAction instead
+ * This function is kept for backward compatibility but simply forwards to getLockedReportingPeriodAction
+ */
+export async function getCurrentReportingPeriod(): Promise<{ periodStart: Date; periodEnd: Date }> {
+  return getLockedReportingPeriodAction();
 }
 
 /**

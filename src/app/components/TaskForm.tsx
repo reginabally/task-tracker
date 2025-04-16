@@ -5,10 +5,12 @@ import { getAllTags, getAllTaskTypes, addTask } from '@/app/tasks/actions';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useTaskContext } from '@/app/lib/TaskContext';
+import { getAutomationRules, AutomationRule } from '@/app/settings/automationActions';
 
 interface TaskType {
   name: string;
   label: string;
+  sortOrder?: number;
 }
 
 interface Tag {
@@ -34,18 +36,33 @@ export default function TaskForm() {
   const [error, setError] = useState<string | null>(null);
   const [selectedTagIndex, setSelectedTagIndex] = useState(-1);
   const tagListRef = useRef<HTMLUListElement>(null);
+  const [automationRules, setAutomationRules] = useState<AutomationRule[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const [tags, types] = await Promise.all([
+        const [tags, types, rules] = await Promise.all([
           getAllTags(),
-          getAllTaskTypes()
+          getAllTaskTypes(),
+          getAutomationRules()
         ]);
         setAllTags(tags);
-        setTaskTypes(types);
+        // Sort task types by sortOrder if available
+        setTaskTypes([...types].sort((a, b) => {
+          // Safely access sortOrder property or default to 0
+          const orderA = 'sortOrder' in a ? (a as unknown as {sortOrder: number}).sortOrder : 0;
+          const orderB = 'sortOrder' in b ? (b as unknown as {sortOrder: number}).sortOrder : 0;
+          
+          // If orders are the same, sort by label alphabetically
+          if (orderA === orderB) {
+            return a.label.localeCompare(b.label);
+          }
+          
+          return orderA - orderB;
+        }));
+        setAutomationRules(rules);
       } catch (err) {
         console.error('Error loading form data:', err);
         setError('Failed to load task types and tags. Please try again.');
@@ -78,41 +95,42 @@ export default function TaskForm() {
     const { name, value } = e.target;
     
     if (name === 'link') {
-      // Handle Slack URLs
-      if (value.startsWith('https://a8c.slack.com/')) {
-        setFormData(prev => ({
-          ...prev,
-          [name]: value,
-          type: 'MANUAL_REVIEW_WORK',
-          tags: prev.tags.includes('slack-ping') ? prev.tags : [...prev.tags, 'slack-ping']
-        }));
-      }
-      // Handle WordPress comment links
-      else if (value.includes('#comment-')) {
-        setFormData(prev => ({
-          ...prev,
-          [name]: value,
-          type: 'COMMUNICATION',
-          tags: prev.tags.includes('p2-discussion') ? prev.tags : [...prev.tags, 'p2-discussion']
-        }));
-      }
-      // Handle WordPress post links
-      else if (value.includes('wordpress.com')) {
-        setFormData(prev => ({
-          ...prev,
-          [name]: value,
-          type: 'COMMUNICATION',
-          tags: prev.tags.includes('p2-post') ? prev.tags : [...prev.tags, 'p2-post']
-        }));
-      }
-      else {
-        // Normal input handling for other links
-        setFormData(prev => ({ ...prev, [name]: value }));
-      }
+      // Apply automation rules for link
+      applyAutomationRules(name, value);
+    } else if (name === 'description') {
+      // Apply automation rules for description
+      applyAutomationRules(name, value);
     } else {
-      // Normal input handling for non-link fields
+      // Normal input handling for non-link and non-description fields
       setFormData(prev => ({ ...prev, [name]: value }));
     }
+  };
+
+  const applyAutomationRules = (field: string, value: string) => {
+    // Basic update to start
+    const updatedFormData = { ...formData, [field]: value };
+    
+    // Process automation rules
+    for (const rule of automationRules) {
+      // Only process rules for the current field type
+      if (rule.trigger !== field) continue;
+      
+      // Skip if pattern is empty or value doesn't include the pattern
+      if (!rule.pattern || !value.includes(rule.pattern)) continue;
+      
+      // Rule matches - apply task type
+      updatedFormData.type = rule.type;
+      
+      // Apply tags from the rule (avoid duplicates)
+      const uniqueTags = new Set([...updatedFormData.tags]);
+      rule.tags.forEach(tag => uniqueTags.add(tag));
+      updatedFormData.tags = Array.from(uniqueTags);
+      
+      // Only apply the first matching rule (for now)
+      break;
+    }
+    
+    setFormData(updatedFormData);
   };
 
   const handleDateChange = (date: Date | null) => {
@@ -255,7 +273,7 @@ export default function TaskForm() {
         
         <div>
           <label htmlFor="type" className="block text-sm font-medium text-gray-800 mb-1">
-            Type
+            Category
           </label>
           <select
             id="type"
@@ -265,7 +283,7 @@ export default function TaskForm() {
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
             disabled={isLoading || taskTypes.length === 0}
           >
-            <option value="">Select a type</option>
+            <option value="">Select a category</option>
             {taskTypes.map(type => (
               <option key={type.name} value={type.name}>
                 {type.label}
