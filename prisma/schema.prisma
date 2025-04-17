@@ -72,3 +72,22 @@ model AutomationRuleTag {
 
   @@id([ruleId, tagId])
 }
+
+model Settings {
+  id                  Int      @id @default(1)
+  reportingPeriodStart DateTime
+  reportingPeriodDay   Int      @default(5) // 0 = Sunday, 5 = Friday
+  defaultDateBehavior  String   @default("today") // today, yesterday, empty
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model AutomationSettings {
+  id               Int      @id @default(1)
+  aiModelUrl       String?
+  aiModelName      String?
+  aiAutoCategorize Boolean  @default(false)
+  aiAutoTag        Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}

@@ -4,12 +4,30 @@ import { useState, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { format } from 'date-fns';
-import { getReportingPeriodSettings, updateReportingPeriod } from '@/app/settings/actions';
+// Dynamically import the appropriate actions based on the environment
+import * as serverActions from '@/app/settings/actions';
+import * as clientActions from '@/app/settings/client-actions';
+
+// Define electron types directly to avoid import issues
+declare global {
+  interface Window {
+    electronAPI?: {
+      appVersion: () => string;
+    };
+  }
+}
+
+// Determine whether to use server or client actions
+const isElectron = process.env.NEXT_PUBLIC_IS_ELECTRON === 'true';
+const { getReportingPeriodSettings, updateReportingPeriod } = isElectron
+  ? clientActions 
+  : serverActions;
 
 export default function GeneralSettings() {
   const [reportStartDate, setReportStartDate] = useState<Date>(new Date());
   const [nextReportDate, setNextReportDate] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [appVersion, setAppVersion] = useState<string>('');
   const [statusMessage, setStatusMessage] = useState<{
     type: 'success' | 'error';
     text: string;
@@ -32,6 +50,18 @@ export default function GeneralSettings() {
     };
 
     loadReportingPeriodSettings();
+  }, []);
+  
+  // Get app version from electron API
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && window.electronAPI) {
+        const version = window.electronAPI.appVersion();
+        setAppVersion(version);
+      }
+    } catch (error) {
+      console.error('Error getting app version:', error);
+    }
   }, []);
 
   // Calculate the next report date when the start date changes
@@ -134,6 +164,15 @@ export default function GeneralSettings() {
               </button>
             </div>
           </div>
+        </div>
+        
+        {/* Application Version Information */}
+        <div className="pt-4 mt-6 border-t border-gray-200">
+          <h4 className="text-md font-medium text-gray-900 mb-2">About</h4>
+          <p className="text-sm text-gray-600">
+            Task Tracker
+            {appVersion && <span className="ml-1">v{appVersion}</span>}
+          </p>
         </div>
       </div>
     </div>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Task Tracker</h1>
+      <p>A desktop application for tracking tasks, generating reports, and AI-assisted HR self-feedback.</p>
+    </header>
+
+    <main>
+      <div class="form-container">
+        <h2>Add New Task</h2>
+        <div id="error-message" class="error-message" style="display: none;"></div>
+        <form id="task-form">
+          <div class="form-group">
+            <label for="description">Description</label>
+            <input type="text" id="description" name="description" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="type">Category</label>
+            <select id="type" name="type" required>
+              <option value="">Select a category</option>
+              <!-- Options will be populated by JavaScript -->
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="tags">Tags</label>
+            <div id="selected-tags" class="tag-container"></div>
+            <div class="tag-input-container">
+              <input type="text" id="tag-input" placeholder="Type a tag and press Enter">
+              <div id="tag-suggestions" class="tag-suggestions"></div>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="date">Date</label>
+            <input type="date" id="date" name="date" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="link">Link (Optional)</label>
+            <input type="url" id="link" name="link">
+          </div>
+          
+          <button type="submit" id="submit-btn">Add Task</button>
+        </form>
+      </div>
+    </main>
+
+    <div id="notification" class="notification" style="display: none;">
+      <div class="notification-content success">
+        <span id="notification-message"></span>
+        <button id="notification-close">×</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html> 

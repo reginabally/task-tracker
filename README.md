@@ -2,7 +2,7 @@
 
 An open-source task tracking tool designed to help individuals and teams log daily work activities, organize tasks by type and tag, and generate structured bi-weekly reports. Ideal for professionals who need a lightweight and customizable way to document their work for performance reviews or team updates. The integrated AI summarization feature helps transform raw task lists into well-structured HR self-feedback drafts.
 
-🛠 Built with Next.js App Router, Tailwind CSS, and Prisma.  
+🛠 Built with Next.js App Router & Electron, Tailwind CSS, and Prisma.  
 📅 Designed for fixed 2-week reporting cycles.  
 📦 Local setup with SQLite and zero external services.  
 🤖 AI-powered self-feedback generation with LM Studio and OpenAI integration.
@@ -10,7 +10,8 @@ An open-source task tracking tool designed to help individuals and teams log dai
 ## Technologies
 
 - **Frontend:** React 19, Next.js 15 (App Router), TypeScript, Tailwind CSS
-- **Backend:** Next.js Server Actions, Prisma ORM
+- **Desktop Version:** Electron 35+
+- **Backend:** Next.js Server Actions & Electron IPC, Prisma ORM
 - **Database:** SQLite (customizable via Prisma)
 - **Date Handling:** date-fns, dayjs
 - **UI Components:** react-datepicker
@@ -33,6 +34,7 @@ An open-source task tracking tool designed to help individuals and teams log dai
   - Customize prompts for personalized summary generation
   - First-person voice summaries ready for performance reviews
   - Download summaries as Markdown files for easy sharing and storage
+- **Desktop Version:** A native desktop app with all the features of the web version
 
 ## Setup and Installation
 
@@ -41,7 +43,7 @@ An open-source task tracking tool designed to help individuals and teams log dai
 - npm or yarn
 - LM Studio (for local AI processing) or OpenAI API key (for cloud AI processing)
 
-### Steps
+### Web Version Setup
 
 1. **Clone the repository**
    ```bash
@@ -110,6 +112,60 @@ An open-source task tracking tool designed to help individuals and teams log dai
 7. **Access the application**
    
    Open [http://localhost:3000](http://localhost:3000) in your browser. You will be automatically redirected to the /tasks page.
+
+### Desktop Version Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/reginabally/task-tracker.git
+   cd task-tracker
+   ```
+
+2. **Install required packages**
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
+
+3. **Setup the database**
+   
+   Follow the same database setup steps as for the web version.
+
+4. **Build the Next.js app**
+   ```bash
+   npm run build
+   # or
+   yarn build
+   ```
+
+5. **Build the Electron app**
+   ```bash
+   npm run build-electron
+   # or
+   yarn build-electron
+   ```
+
+6. **Run the desktop app**
+   ```bash
+   npm start
+   # or
+   yarn start
+   ```
+
+7. **Package the app (optional)**
+   ```bash
+   npm run package
+   # or
+   yarn package
+   ```
+
+8. **Create installable apps (optional)**
+   ```bash
+   npm run make
+   # or
+   yarn make
+   ```
 
 ## Usage
 

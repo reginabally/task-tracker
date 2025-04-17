@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
+// For Electron, we'll use a static export
 const nextConfig: NextConfig = {
-  /* config options here */
+  output: 'export',
+  distDir: 'out',
 };
 
 export default nextConfig;
