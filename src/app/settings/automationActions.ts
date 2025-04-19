@@ -29,12 +29,18 @@ export async function getAutomationRules(): Promise<AutomationRule[]> {
       }
     });
 
-    return rules.map(rule => ({
+    return rules.map((rule: {
+      id: number;
+      trigger: string;
+      pattern: string;
+      type: { name: string };
+      tags: Array<{ tag: { name: string } }>;
+    }): AutomationRule => ({
       id: rule.id,
       trigger: rule.trigger as 'link' | 'description',
       pattern: rule.pattern,
       type: rule.type.name,
-      tags: rule.tags.map(t => t.tag.name)
+      tags: rule.tags.map((t: { tag: { name: string } }) => t.tag.name)
     }));
   } catch (error) {
     console.error('Error fetching automation rules:', error);
@@ -87,7 +93,7 @@ export async function createAutomationRule(rule: AutomationRule): Promise<{
       });
 
       // Create the tag associations
-      const tagPromises = tags.map(tag => 
+      const tagPromises = tags.map((tag: { id: string }) => 
         prisma.automationRuleTag.create({
           data: {
             ruleId: createdRule.id,
@@ -179,7 +185,7 @@ export async function updateAutomationRule(rule: AutomationRule): Promise<{
       });
 
       // Create the tag associations
-      const tagPromises = tags.map(tag => 
+      const tagPromises = tags.map((tag: { id: string }) => 
         prisma.automationRuleTag.create({
           data: {
             ruleId: updatedRule.id,
@@ -242,4 +248,4 @@ export async function deleteAutomationRule(id: number): Promise<{
       message: 'Failed to delete automation rule'
     };
   }
-} 
+}

@@ -276,7 +276,9 @@ export async function getTags(): Promise<{ id: string; name: string; label: stri
     });
     
     // Sort tags in case-insensitive manner
-    return tags.sort((a, b) => a.label.toLowerCase().localeCompare(b.label.toLowerCase()));
+    return tags.sort((a: { label: string }, b: { label: string }) =>
+      a.label.toLowerCase().localeCompare(b.label.toLowerCase())
+    );
   } catch (error) {
     console.error('Error fetching tags:', error);
     return [];
@@ -459,4 +461,4 @@ export async function updateTaskTypeOrder(id: string, newOrder: number): Promise
       message: 'Failed to update category order'
     };
   }
-} 
+}
