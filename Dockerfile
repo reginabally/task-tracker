@@ -9,6 +9,7 @@ RUN npm install
 
 # Copy full app source
 COPY . .
+RUN npx prisma generate
 
 # =====================================================
 # PRODUCTION BUILD STEP
@@ -26,9 +27,6 @@ ENV NODE_ENV=production
 
 # For development mode, uncomment:
 # ENV NODE_ENV=development
-
-# Generate Prisma Client for Linux ARM inside Docker
-RUN npx prisma generate
 
 # Make sure Node process can write to the /app/prisma directory
 RUN chmod -R a+rwX /app/prisma
