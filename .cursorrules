@@ -88,3 +88,9 @@ You are an expert in TypeScript, Next.js App Router, React, and Tailwind CSS. Al
   - Add export functionality for reports (e.g., as `.txt` or Markdown).
   - Consider UI improvements such as a date picker (e.g., `react-datepicker`) and a model selection interface for LM Studio.
   - Use Git for version control with frequent commits and back up the database file if using SQLite.
+
+## Docker Packaging Instructions
+- Primary goal: package the Next.js app with Docker for easier setup and distribution.
+- Always follow official Docker (https://docs.docker.com/) and Docker Compose (https://docs.docker.com/compose/) best practices for building images, managing volumes, and handling environment variables.
+- Do not modify the Prisma client code or database configuration without my explicit confirmation.
+- If any changes to the Prisma client or its configuration are necessary, list the intended changes and the reasons for each so I can review and approve before proceeding.

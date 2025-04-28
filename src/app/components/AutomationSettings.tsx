@@ -2,7 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { getTaskTypes, getTags } from '@/app/settings/actions';
-import { getAutomationRules, createAutomationRule, updateAutomationRule, deleteAutomationRule, AutomationRule } from '@/app/settings/automationActions';
+import { getAutomationRules, createAutomationRule, updateAutomationRule, deleteAutomationRule, AutomationRule as BaseAutomationRule } from '@/app/settings/automationActions';
+
+// Extend the base AutomationRule interface to include a tempId for local state management
+interface AutomationRule extends BaseAutomationRule {
+  tempId?: number;
+}
 
 interface TaskType {
   id: string;
@@ -23,6 +28,17 @@ export default function AutomationSettings() {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+  // Clear success messages after 3 seconds
+  useEffect(() => {
+    if (statusMessage && statusMessage.type === 'success') {
+      const timer = setTimeout(() => {
+        setStatusMessage(null);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [statusMessage]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -55,32 +71,16 @@ export default function AutomationSettings() {
       trigger: 'description',
       pattern: '',
       type: taskTypes.length > 0 ? taskTypes[0].name : '',
-      tags: []
+      tags: [],
+      tempId: Date.now()
     };
 
-    try {
-      const result = await createAutomationRule(newRule);
-      
-      if (result.success && result.rule) {
-        setRules([...rules, result.rule]);
-        setEditingIndex(rules.length);
-        setStatusMessage({
-          type: 'success',
-          text: result.message
-        });
-      } else {
-        setStatusMessage({
-          type: 'error',
-          text: result.message
-        });
-      }
-    } catch (error) {
-      console.error('Error adding rule:', error);
-      setStatusMessage({
-        type: 'error',
-        text: 'An unexpected error occurred while adding the rule'
-      });
-    }
+    // Add the new rule to the local state instead of creating it in the database immediately
+    const newRules = [...rules, newRule];
+    setRules(newRules);
+    
+    // Set the new rule to edit mode
+    setEditingIndex(newRules.length - 1);
   };
 
   const updateRule = async (index: number, updatedRule: AutomationRule) => {
@@ -93,9 +93,30 @@ export default function AutomationSettings() {
     const rule = rules[index];
     
     try {
-      const result = await updateAutomationRule(rule);
+      let result;
+      
+      // Create a clean rule object without the tempId property for server actions
+      const { tempId, ...cleanRule } = rule;
+      
+      if (rule.id) {
+        // If the rule has an ID, update it
+        result = await updateAutomationRule(cleanRule);
+      } else {
+        // If the rule doesn't have an ID, create it
+        result = await createAutomationRule(cleanRule);
+      }
       
       if (result.success) {
+        // If we created a new rule, update our local state with the server-assigned ID
+        if (result.rule) {
+          const updatedRules = [...rules];
+          updatedRules[index] = {
+            ...result.rule,
+            tempId: rule.tempId // Preserve the tempId in case we need it
+          };
+          setRules(updatedRules);
+        }
+        
         setStatusMessage({
           type: 'success',
           text: result.message
@@ -108,10 +129,10 @@ export default function AutomationSettings() {
         });
       }
     } catch (error) {
-      console.error('Error updating rule:', error);
+      console.error('Error saving rule:', error);
       setStatusMessage({
         type: 'error',
-        text: 'An unexpected error occurred while updating the rule'
+        text: 'An unexpected error occurred while saving the rule'
       });
     }
   };
@@ -159,6 +180,19 @@ export default function AutomationSettings() {
 
   const handleSaveRule = (index: number) => {
     saveRule(index);
+  };
+
+  const handleCancelRule = (index: number) => {
+    const rule = rules[index];
+
+    // If the rule doesn't have an ID, it hasn't been saved to the database yet, so remove it
+    if (!rule.id) {
+      const updatedRules = rules.filter((_, i) => i !== index);
+      setRules(updatedRules);
+    }
+    
+    // Exit edit mode
+    setEditingIndex(null);
   };
 
   const toggleTag = (ruleIndex: number, tagName: string) => {
@@ -213,7 +247,7 @@ export default function AutomationSettings() {
       ) : (
         <div className="space-y-4">
           {rules.map((rule, index) => (
-            <div key={rule.id ?? index} className="bg-gray-50 rounded-md p-4 border border-gray-200">
+            <div key={rule.id ?? rule.tempId ?? index} className="bg-gray-50 rounded-md p-4 border border-gray-200">
               {editingIndex === index ? (
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -283,6 +317,12 @@ export default function AutomationSettings() {
                   </div>
 
                   <div className="flex justify-end space-x-2 mt-4">
+                    <button
+                      onClick={() => handleCancelRule(index)}
+                      className="bg-gray-100 text-gray-700 px-4 py-2 rounded hover:bg-gray-200 transition"
+                    >
+                      Cancel
+                    </button>
                     <button
                       onClick={() => handleSaveRule(index)}
                       className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition"

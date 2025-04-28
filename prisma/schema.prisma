@@ -46,13 +46,6 @@ model TaskTag {
   @@id([taskId, tagId])
 }
 
-model ReportingPeriod {
-  id            Int      @id @default(1)
-  periodStart   DateTime
-  nextStartDate DateTime
-  updatedAt     DateTime @updatedAt
-}
-
 model AutomationRule {
   id        Int                 @id @default(autoincrement())
   trigger   String // 'link' or 'description'
@@ -72,4 +65,10 @@ model AutomationRuleTag {
   tag  Tag            @relation(fields: [tagId], references: [id])
 
   @@id([ruleId, tagId])
+}
+
+model Setting {
+  key       String   @id
+  value     String?
+  updatedAt DateTime @updatedAt
 }

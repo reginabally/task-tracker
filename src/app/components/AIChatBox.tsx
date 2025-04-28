@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { getOpenAIApiKey, getLMStudioEndpoint, getOpenAIEndpoint } from '@/app/settings/actions';
 
-// Environment variables (these will be loaded by Next.js at build time)
-const LM_STUDIO_API_ENDPOINT = process.env.NEXT_PUBLIC_LM_STUDIO_API_ENDPOINT || 'http://localhost:1234/v1/chat/completions';
-const OPENAI_API_ENDPOINT = process.env.NEXT_PUBLIC_OPENAI_API_ENDPOINT || 'https://api.openai.com/v1/chat/completions';
-const OPENAI_API_KEY = process.env.NEXT_PUBLIC_OPENAI_API_KEY || '';
+// Default fallback endpoint for OpenAI (used only if not found in settings)
+const DEFAULT_OPENAI_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
 
 interface AIChatBoxProps {
   prompt: string;
@@ -32,14 +31,49 @@ export default function AIChatBox({
   const [editedPrompt, setEditedPrompt] = useState(prompt);
   const [editedContent, setEditedContent] = useState(content);
   const [isLoading, setIsLoading] = useState(false);
+  const [openAIApiKey, setOpenAIApiKey] = useState<string>('');
+  const [lmStudioEndpoint, setLMStudioEndpoint] = useState<string>('http://localhost:1234/v1/chat/completions');
+  const [openAIEndpoint, setOpenAIEndpoint] = useState<string>(DEFAULT_OPENAI_ENDPOINT);
   
-  // Update state when props change
+  // Fetch API settings from the Settings table
+  useEffect(() => {
+    const fetchAPISettings = async () => {
+      try {
+        // Always fetch both endpoints regardless of selected model
+        const { value: lmEndpoint } = await getLMStudioEndpoint();
+        if (lmEndpoint) {
+          setLMStudioEndpoint(lmEndpoint);
+        }
+        
+        const { value: oaiEndpoint } = await getOpenAIEndpoint();
+        if (oaiEndpoint) {
+          setOpenAIEndpoint(oaiEndpoint);
+        }
+        
+        // Fetch OpenAI API key if that model is selected
+        if (selectedModel === 'openai-gpt4o') {
+          const { value } = await getOpenAIApiKey();
+          setOpenAIApiKey(value || '');
+        }
+      } catch (error) {
+        console.error('Error fetching API settings:', error);
+      }
+    };
+    
+    fetchAPISettings();
+  }, [selectedModel]);
+
+  // Update edited content when content prop changes
+  useEffect(() => {
+    setEditedContent(content);
+  }, [content]);
+
+  // Update edited prompt when prompt prop changes
   useEffect(() => {
     setEditedPrompt(prompt);
-    setEditedContent(content);
-  }, [prompt, content]);
+  }, [prompt]);
 
-  // Update parent component when loading state changes
+  // Update loading state in parent component
   useEffect(() => {
     if (onLoadingStateChange) {
       onLoadingStateChange(isLoading);
@@ -88,14 +122,17 @@ export default function AIChatBox({
       }
       
       // Determine which API endpoint to use based on selected model
-      const endpoint = selectedModel === 'lm-studio' ? LM_STUDIO_API_ENDPOINT : OPENAI_API_ENDPOINT;
+      const endpoint = selectedModel === 'lm-studio' ? lmStudioEndpoint : openAIEndpoint;
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
       };
       
       // Add authentication for OpenAI
       if (selectedModel === 'openai-gpt4o') {
-        headers['Authorization'] = `Bearer ${OPENAI_API_KEY}`;
+        if (!openAIApiKey) {
+          throw new Error('OpenAI API key is missing');
+        }
+        headers['Authorization'] = `Bearer ${openAIApiKey}`;
       }
       
       // Prepare the body based on the selected model
@@ -138,7 +175,7 @@ export default function AIChatBox({
           statusText: response.statusText,
           errorData,
           endpoint,
-          hasApiKey: selectedModel === 'openai-gpt4o' ? !!OPENAI_API_KEY : 'N/A',
+          hasApiKey: selectedModel === 'openai-gpt4o' ? !!openAIApiKey : 'N/A',
         });
         throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
       }
@@ -155,15 +192,15 @@ export default function AIChatBox({
       
       // Provide more specific error messages based on error type
       if (selectedModel === 'openai-gpt4o') {
-        if (!OPENAI_API_KEY || OPENAI_API_KEY === '') {
-          alert('OpenAI API key is missing. Please add your API key to the .env.local file with NEXT_PUBLIC_OPENAI_API_KEY.');
+        if (!openAIApiKey) {
+          alert('OpenAI API key is missing. Please go to Settings → AI Config to add your API key.');
         } else if (errorMessage.includes('401')) {
           alert('OpenAI API authentication failed. Please check that your API key is valid and properly formatted.');
         } else {
           alert(`Failed to get AI summary from OpenAI: ${errorMessage}`);
         }
       } else {
-        alert(`Failed to get AI summary from LM Studio. Make sure LM Studio is running and the API endpoint is accessible.`);
+        alert(`Failed to get AI summary from LM Studio. Make sure LM Studio is running and the API endpoint is accessible at ${lmStudioEndpoint}`);
       }
     } finally {
       setIsLoading(false);

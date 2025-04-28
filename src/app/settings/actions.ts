@@ -3,7 +3,7 @@
 import { prisma } from '@/app/lib/prisma';
 
 /**
- * Updates the reporting period start date in the ReportingPeriod table
+ * Updates the reporting period start date in the Settings table
  * @param startDate - The new reporting period start date
  */
 export async function updateReportingPeriod(startDate: Date): Promise<{ success: boolean; message: string }> {
@@ -12,19 +12,20 @@ export async function updateReportingPeriod(startDate: Date): Promise<{ success:
     const nextStartDate = new Date(startDate);
     nextStartDate.setDate(startDate.getDate() + 14);
     
-    // Update the ReportingPeriod record
-    await prisma.reportingPeriod.upsert({
-      where: { id: 1 },
-      update: {
-        periodStart: startDate,
-        nextStartDate: nextStartDate
-      },
-      create: {
-        id: 1,
-        periodStart: startDate,
-        nextStartDate: nextStartDate
-      }
-    });
+    // Format dates as YYYY-MM-DD for storage
+    const startDateStr = formatDateOnly(startDate);
+    const nextStartDateStr = formatDateOnly(nextStartDate);
+    
+    // Update the Settings records
+    const updateStart = await updateSetting('reportingPeriod_start', startDateStr);
+    const updateNextStart = await updateSetting('reportingPeriod_nextStartDate', nextStartDateStr);
+    
+    if (!updateStart.success || !updateNextStart.success) {
+      return { 
+        success: false, 
+        message: 'Failed to update one or more reporting period settings' 
+      };
+    }
     
     return { 
       success: true, 
@@ -40,18 +41,18 @@ export async function updateReportingPeriod(startDate: Date): Promise<{ success:
 }
 
 /**
- * Gets the current reporting period settings
+ * Gets the current reporting period settings from the Settings table
  */
 export async function getReportingPeriodSettings(): Promise<{ periodStart: Date; nextStartDate: Date }> {
   try {
-    // Get the current reporting period from the database
-    const reportingPeriod = await prisma.reportingPeriod.findUnique({
-      where: { id: 1 }
-    });
+    // Get the current reporting period settings from the database
+    const startResult = await getSetting('reportingPeriod_start');
+    const nextStartResult = await getSetting('reportingPeriod_nextStartDate');
     
-    if (!reportingPeriod) {
-      // If no reporting period exists, return current date and calculated next date
+    // If settings don't exist, return current date and calculated next date
+    if (!startResult.value || !nextStartResult.value) {
       const today = new Date();
+      today.setHours(0, 0, 0, 0);
       const nextDate = new Date(today);
       nextDate.setDate(today.getDate() + 14);
       
@@ -62,13 +63,14 @@ export async function getReportingPeriodSettings(): Promise<{ periodStart: Date;
     }
     
     return { 
-      periodStart: reportingPeriod.periodStart,
-      nextStartDate: reportingPeriod.nextStartDate
+      periodStart: parseDateOnly(startResult.value),
+      nextStartDate: parseDateOnly(nextStartResult.value)
     };
   } catch (error) {
     console.error('Error fetching reporting period settings:', error);
     // Return current date and calculated next date as fallback
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const nextDate = new Date(today);
     nextDate.setDate(today.getDate() + 14);
     
@@ -461,4 +463,154 @@ export async function updateTaskTypeOrder(id: string, newOrder: number): Promise
       message: 'Failed to update category order'
     };
   }
+}
+
+/**
+ * Gets a setting value by key from the Setting table
+ * @param key - The setting key
+ */
+export async function getSetting(key: string): Promise<{ value: string | null }> {
+  try {
+    // Use raw query to get the setting
+    const result = await prisma.$queryRaw`
+      SELECT value FROM "Setting" WHERE key = ${key}
+    ` as { value: string }[];
+    
+    return { 
+      value: result.length > 0 ? result[0].value : null
+    };
+  } catch (error) {
+    console.error(`Error fetching setting ${key}:`, error);
+    return { value: null };
+  }
+}
+
+/**
+ * Updates a setting value in the Setting table
+ * @param key - The setting key
+ * @param value - The setting value
+ */
+export async function updateSetting(key: string, value: string): Promise<{ success: boolean; message: string }> {
+  try {
+    // Check if the setting exists
+    const existingResult = await prisma.$queryRaw`
+      SELECT key FROM "Setting" WHERE key = ${key}
+    ` as { key: string }[];
+    
+    if (existingResult.length > 0) {
+      // Update existing setting
+      await prisma.$executeRaw`
+        UPDATE "Setting" SET value = ${value}, "updatedAt" = CURRENT_TIMESTAMP WHERE key = ${key}
+      `;
+    } else {
+      // Insert new setting
+      await prisma.$executeRaw`
+        INSERT INTO "Setting" (key, value, "updatedAt") VALUES (${key}, ${value}, CURRENT_TIMESTAMP)
+      `;
+    }
+    
+    return { 
+      success: true, 
+      message: 'Setting updated successfully' 
+    };
+  } catch (error) {
+    console.error(`Error updating setting ${key}:`, error);
+    return { 
+      success: false, 
+      message: 'Failed to update setting' 
+    };
+  }
+}
+
+/**
+ * Gets the OpenAI API key from the Settings table
+ */
+export async function getOpenAIApiKey(): Promise<{ value: string | null }> {
+  try {
+    return await getSetting('openaikey');
+  } catch (error) {
+    console.error('Error fetching OpenAI API key:', error);
+    return { value: null };
+  }
+}
+
+/**
+ * Updates the OpenAI API key in the Settings table
+ * @param apiKey - The OpenAI API key
+ */
+export async function updateOpenAIApiKey(apiKey: string): Promise<{ success: boolean; message: string }> {
+  try {
+    return await updateSetting('openaikey', apiKey);
+  } catch (error) {
+    console.error('Error updating OpenAI API key:', error);
+    return { success: false, message: 'Failed to update API key' };
+  }
+}
+
+/**
+ * Gets the LM Studio endpoint from the Settings table
+ */
+export async function getLMStudioEndpoint(): Promise<{ value: string | null }> {
+  try {
+    return await getSetting('lmstudioendpoint');
+  } catch (error) {
+    console.error('Error fetching LM Studio endpoint:', error);
+    return { value: null };
+  }
+}
+
+/**
+ * Updates the LM Studio endpoint in the Settings table
+ * @param endpoint - The LM Studio API endpoint URL
+ */
+export async function updateLMStudioEndpoint(endpoint: string): Promise<{ success: boolean; message: string }> {
+  try {
+    return await updateSetting('lmstudioendpoint', endpoint);
+  } catch (error) {
+    console.error('Error updating LM Studio endpoint:', error);
+    return { success: false, message: 'Failed to update LM Studio endpoint' };
+  }
+}
+
+/**
+ * Gets the OpenAI API endpoint from the Settings table
+ */
+export async function getOpenAIEndpoint(): Promise<{ value: string | null }> {
+  try {
+    return await getSetting('openapiendpoint');
+  } catch (error) {
+    console.error('Error fetching OpenAI API endpoint:', error);
+    return { value: null };
+  }
+}
+
+/**
+ * Updates the OpenAI API endpoint in the Settings table
+ * @param endpoint - The OpenAI API endpoint URL
+ */
+export async function updateOpenAIEndpoint(endpoint: string): Promise<{ success: boolean; message: string }> {
+  try {
+    return await updateSetting('openapiendpoint', endpoint);
+  } catch (error) {
+    console.error('Error updating OpenAI API endpoint:', error);
+    return { success: false, message: 'Failed to update OpenAI API endpoint' };
+  }
+}
+
+/**
+ * Formats a date object to YYYY-MM-DD string format
+ * @param date - The date to format
+ */
+function formatDateOnly(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
+
+/**
+ * Parses a YYYY-MM-DD string to a Date object
+ * @param dateStr - The date string to parse
+ */
+function parseDateOnly(dateStr: string): Date {
+  const date = new Date(dateStr);
+  date.setHours(0, 0, 0, 0);
+  return date;
 }

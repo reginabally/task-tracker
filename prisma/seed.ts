@@ -74,26 +74,7 @@ async function main() {
       ]
     });
 
-    // Initialize reporting period
-    // Calculate reporting period automatically
-    const today = new Date();
-    const periodStart = getLastFriday(today);
-    const nextStartDate = addDays(periodStart, 14);
-
-    await prisma.reportingPeriod.upsert({
-      where: { id: 1 },
-      update: {},
-      create: {
-        id: 1,
-        periodStart,
-        nextStartDate,
-      },
-    });
-
-    console.log("✅ Reporting period initialized:", {
-      periodStart: periodStart.toISOString().split("T")[0],
-      nextStartDate: nextStartDate.toISOString().split("T")[0],
-    });
+ 
   } catch (e) {
     console.error("❌ Error seeding database:", e);
     process.exit(1);

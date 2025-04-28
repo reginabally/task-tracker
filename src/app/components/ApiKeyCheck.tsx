@@ -1,19 +1,29 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { getOpenAIApiKey } from '@/app/settings/actions';
 
 export default function ApiKeyCheck() {
   const [apiKeyStatus, setApiKeyStatus] = useState<'checking' | 'available' | 'missing'>('checking');
   
   useEffect(() => {
-    // Check if API key is available
-    const openaiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+    // Check if API key is available from Settings table
+    const checkApiKey = async () => {
+      try {
+        const { value } = await getOpenAIApiKey();
+        
+        if (value && value.trim() !== '') {
+          setApiKeyStatus('available');
+        } else {
+          setApiKeyStatus('missing');
+        }
+      } catch (error) {
+        console.error('Error checking API key:', error);
+        setApiKeyStatus('missing');
+      }
+    };
     
-    if (openaiKey && openaiKey.trim() !== '') {
-      setApiKeyStatus('available');
-    } else {
-      setApiKeyStatus('missing');
-    }
+    checkApiKey();
   }, []);
 
   if (apiKeyStatus === 'checking') {
@@ -36,11 +46,9 @@ export default function ApiKeyCheck() {
           <p className="text-sm text-yellow-700">
             <strong className="font-medium">OpenAI API Key Not Found</strong>
             <br />
-            The OpenAI API key environment variable (NEXT_PUBLIC_OPENAI_API_KEY) was not detected. 
+            No OpenAI API key was found in the system settings.
             <br />
-            1. Make sure it&apos;s set in your .env.local file
-            <br />
-            2. Restart your Next.js server to apply the changes
+            Go to Settings → AI Config to add your OpenAI API key.
           </p>
         </div>
       </div>

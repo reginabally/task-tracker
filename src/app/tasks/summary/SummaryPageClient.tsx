@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import AIChatBox from '@/app/components/AIChatBox';
 import CollapsibleText from '@/app/components/CollapsibleText';
 import ApiKeyCheck from '@/app/components/ApiKeyCheck';
 import { format } from 'date-fns';
+import { getOpenAIApiKey } from '@/app/settings/actions';
 
 // Model options type
 type AIModel = 'lm-studio' | 'openai-gpt4o';
@@ -13,7 +14,6 @@ type AIModel = 'lm-studio' | 'openai-gpt4o';
 // Environment variables (these will be loaded by Next.js at build time)
 const LM_STUDIO_API_ENDPOINT = process.env.NEXT_PUBLIC_LM_STUDIO_API_ENDPOINT || 'http://localhost:1234/v1/chat/completions';
 const OPENAI_API_ENDPOINT = process.env.NEXT_PUBLIC_OPENAI_API_ENDPOINT || 'https://api.openai.com/v1/chat/completions';
-const OPENAI_API_KEY = process.env.NEXT_PUBLIC_OPENAI_API_KEY || '';
 
 export default function SummaryPageClient({
   initialTextReport,
@@ -28,6 +28,7 @@ export default function SummaryPageClient({
   const [previousFeedback, setPreviousFeedback] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedModel, setSelectedModel] = useState<AIModel>('openai-gpt4o');
+  const [openAIApiKey, setOpenAIApiKey] = useState<string>('');
   
   const [aiPrompt, setAiPrompt] = useState(`You are a helpful assistant summarizing a work report for an HR self-feedback draft.
 
@@ -39,6 +40,20 @@ Generate a short summary paragraph in first-person voice, organized into the fol
 - Growth
 - Achievements
 - Future Goals`);
+  
+  // Fetch the OpenAI API key from the Settings table
+  useEffect(() => {
+    const fetchOpenAIApiKey = async () => {
+      try {
+        const { value } = await getOpenAIApiKey();
+        setOpenAIApiKey(value || '');
+      } catch (error) {
+        console.error('Error fetching OpenAI API key:', error);
+      }
+    };
+    
+    fetchOpenAIApiKey();
+  }, []);
   
   // Handle edits to the task summary content
   const handleContentEdit = (newContent: string) => {
@@ -142,19 +157,19 @@ Generate a short summary paragraph in first-person voice, organized into the fol
     });
   };
 
-  // Send previous feedback to AI for summarization
-  const summarizePreviousFeedback = async (feedbackContent: string): Promise<string> => {
-    const prompt = `You are an assistant helping to condense past HR self-feedback for reuse in a new summary.
+  // Summarize previous feedback using AI
+  const summarizePreviousFeedback = async (text: string): Promise<string> => {
+    const prompt = `You are a system that extracts key points from HR performance review self-assessment feedback.
+Here is the previous feedback document:
+${text}
 
-Here is the original self-feedback:
-${feedbackContent}
+Your task is to extract the most important points and areas of focus from this feedback, in a very concise bullet point format.
+Focus on:
+- Areas mentioned for improvement
+- Key achievements and strengths
+- Any specific goals mentioned
 
-Summarize each of the following sections in 1–2 sentences each (if available):
-- Growth
-- Achievements / Pride
-- Goals
-
-Use a neutral tone and first-person voice. Keep it short, suitable for use as context in a new self-feedback draft.`;
+Keep your response under 150 words total, focusing only on the most important information.`;
 
     try {
       const endpoint = selectedModel === 'lm-studio' ? LM_STUDIO_API_ENDPOINT : OPENAI_API_ENDPOINT;
@@ -164,7 +179,10 @@ Use a neutral tone and first-person voice. Keep it short, suitable for use as co
       
       // Add authentication for OpenAI
       if (selectedModel === 'openai-gpt4o') {
-        headers['Authorization'] = `Bearer ${OPENAI_API_KEY}`;
+        if (!openAIApiKey) {
+          throw new Error('OpenAI API key is missing');
+        }
+        headers['Authorization'] = `Bearer ${openAIApiKey}`;
       }
       
       // Prepare the body based on the selected model

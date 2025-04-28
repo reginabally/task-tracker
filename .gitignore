@@ -49,8 +49,11 @@ next-env.d.ts
 *.env.prod
 
 # database
-# Comment out these lines if you want to include the database in Git
-# /prisma/production.db
-# /prisma/development.db
-# /prisma/test.db
-# /prisma/*.db-journal
+/prisma/*.bak
+/prisma/local.db
+/prisma/seed.*
+
+
+# Cursor
+.cursorrules
+.cursor/rules/*
