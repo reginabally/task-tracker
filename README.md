@@ -4,7 +4,7 @@ An open-source task tracking tool designed to help individuals and teams log dai
 
 🛠 Built with Next.js App Router, Tailwind CSS, and Prisma.  
 📅 Designed for fixed 2-week reporting cycles.  
-📦 Local setup with SQLite and zero external services.  
+📦 Docker containerized for easy deployment and setup.  
 🤖 AI-powered self-feedback generation with LM Studio and OpenAI integration.
 
 ## Technologies
@@ -15,6 +15,7 @@ An open-source task tracking tool designed to help individuals and teams log dai
 - **Date Handling:** date-fns, dayjs
 - **UI Components:** react-datepicker
 - **AI Integration:** LM Studio (local), OpenAI API (cloud)
+- **Deployment:** Docker, Docker Compose
 
 ## Features
 
@@ -37,11 +38,47 @@ An open-source task tracking tool designed to help individuals and teams log dai
 ## Setup and Installation
 
 ### Prerequisites
-- Node.js (v18 or newer)
-- npm or yarn
+- Docker and Docker Compose
 - LM Studio (for local AI processing) or OpenAI API key (for cloud AI processing)
 
-### Steps
+### Docker Setup (Recommended)
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/reginabally/task-tracker.git
+   cd task-tracker
+   ```
+
+2. **Configure environment variables**
+   ```bash
+   cp .env.sample .env
+   ```
+   Edit the `.env` file if needed to customize your setup.
+
+3. **Build and start the Docker containers**
+   ```bash
+   docker-compose up -d
+   ```
+   This will build the Docker image and start the application in detached mode.
+
+4. **Access the application**
+   
+   Open [http://localhost:3000](http://localhost:3000) in your browser. You will be automatically redirected to the /tasks page.
+
+5. **Configure AI Integration**
+
+   For **LM Studio** (local AI, default option):
+   - Install LM Studio from [lmstudio.ai](https://lmstudio.ai)
+   - Launch LM Studio and start the local server
+   - Ensure LM Studio is accessible from the Docker container (adjust network settings if needed)
+   - The default endpoint is set to `http://host.docker.internal:1234/v1/chat/completions` for Mac/Windows or `http://172.17.0.1:1234/v1/chat/completions` for Linux
+
+   For **OpenAI** (cloud AI):
+   - Launch the application and navigate to Settings → AI Config
+   - Enter your OpenAI API key in the provided field and click Save
+   - Your API key will be stored securely in the database
+
+### Manual Setup (Alternative)
 
 1. **Clone the repository**
    ```bash
@@ -79,15 +116,7 @@ An open-source task tracking tool designed to help individuals and teams log dai
 
 5. **Configure AI Integration**
 
-   For **LM Studio** (local AI, default option):
-   - Install LM Studio from [lmstudio.ai](https://lmstudio.ai)
-   - Launch LM Studio and start the local server
-   - The default endpoint is set to `http://localhost:1234/v1/chat/completions`
-
-   For **OpenAI** (cloud AI):
-   - Edit the `.env` file
-   - Add your OpenAI API key to `NEXT_PUBLIC_OPENAI_API_KEY`
-   - Restart the development server after adding the API key
+   Follow the AI integration steps from the Docker setup above.
 
 6. **Build and run the server**
    
@@ -110,6 +139,42 @@ An open-source task tracking tool designed to help individuals and teams log dai
 7. **Access the application**
    
    Open [http://localhost:3000](http://localhost:3000) in your browser. You will be automatically redirected to the /tasks page.
+
+## Docker Management
+
+### Viewing Logs
+```bash
+docker-compose logs -f
+```
+
+### Stopping the Application
+```bash
+docker-compose down
+```
+
+### Restarting the Application
+```bash
+docker-compose restart
+```
+
+### Updating to a New Version
+```bash
+git pull
+docker-compose down
+docker-compose build
+docker-compose up -d
+```
+
+### Database Persistence
+The SQLite database is stored in a Docker volume to ensure data persistence across container restarts. To backup your data:
+
+```bash
+# Find the volume name
+docker volume ls
+
+# Create a backup
+docker run --rm -v task-tracker_db-data:/data -v $(pwd):/backup alpine tar -czvf /backup/db-backup.tar.gz -C /data .
+```
 
 ## Usage
 

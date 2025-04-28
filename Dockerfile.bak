@@ -15,17 +15,17 @@ COPY . .
 # Uncomment for production mode and comment for development mode
 # =====================================================
 # Build the Next.js app
-# RUN npm run build
+RUN npm run build
 
 # =====================================================
 # ENVIRONMENT SETUP
 # Toggle between production and development as needed
 # =====================================================
 # For production mode, uncomment:
-# ENV NODE_ENV=production
+ENV NODE_ENV=production
 
 # For development mode, uncomment:
-ENV NODE_ENV=development
+# ENV NODE_ENV=development
 
 # Generate Prisma Client for Linux ARM inside Docker
 RUN npx prisma generate

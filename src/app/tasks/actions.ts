@@ -233,55 +233,104 @@ export async function getLockedReportingPeriodAction(): Promise<{ periodStart: D
   
   const prisma = await import('../lib/prisma').then(m => m.prisma);
   
-  // Get the current reporting period from the database
-  let reportingPeriod = await prisma.reportingPeriod.findUnique({
-    where: { id: 1 }
-  });
+  // Get the current reporting period settings from the database
+  const startSetting = await prisma.$queryRaw`
+    SELECT value FROM "Setting" WHERE key = 'reportingPeriod_start'
+  ` as { value: string }[];
   
-  // If no reporting period exists, create one starting from the most recent Friday
-  if (!reportingPeriod) {
+  const nextStartSetting = await prisma.$queryRaw`
+    SELECT value FROM "Setting" WHERE key = 'reportingPeriod_nextStartDate'
+  ` as { value: string }[];
+  
+  let periodStart: Date;
+  let nextStartDate: Date;
+  
+  // If no reporting period settings exist, create defaults starting from the most recent Friday
+  if (startSetting.length === 0 || nextStartSetting.length === 0) {
     const today = new Date();
     const daysUntilFriday = (5 - today.getDay() + 7) % 7;
-    const periodStart = new Date(today);
+    periodStart = new Date(today);
     periodStart.setDate(today.getDate() - daysUntilFriday);
     periodStart.setHours(0, 0, 0, 0);
     
-    const nextStartDate = new Date(periodStart);
+    nextStartDate = new Date(periodStart);
     nextStartDate.setDate(periodStart.getDate() + 14);
     
-    reportingPeriod = await prisma.reportingPeriod.create({
-      data: {
-        id: 1,
-        periodStart,
-        nextStartDate
-      }
-    });
+    // Format dates as YYYY-MM-DD for storage
+    const periodStartStr = formatDateOnly(periodStart);
+    const nextStartDateStr = formatDateOnly(nextStartDate);
+    
+    // Insert default settings
+    await prisma.$executeRaw`
+      INSERT OR REPLACE INTO "Setting" (key, value, "updatedAt") 
+      VALUES ('reportingPeriod_start', ${periodStartStr}, CURRENT_TIMESTAMP)
+    `;
+    
+    await prisma.$executeRaw`
+      INSERT OR REPLACE INTO "Setting" (key, value, "updatedAt") 
+      VALUES ('reportingPeriod_nextStartDate', ${nextStartDateStr}, CURRENT_TIMESTAMP)
+    `;
+  } else {
+    // Use existing settings - parse the YYYY-MM-DD format
+    periodStart = parseDateOnly(startSetting[0].value);
+    nextStartDate = parseDateOnly(nextStartSetting[0].value);
   }
   
   // Check if we need to roll over to the next period
   const today = new Date();
-  if (today >= reportingPeriod.nextStartDate) {
+  today.setHours(0, 0, 0, 0); // Set to beginning of day for proper comparison
+  
+  if (today >= nextStartDate) {
     // Update the reporting period
-    const newPeriodStart = reportingPeriod.nextStartDate;
+    const newPeriodStart = nextStartDate;
     const newNextStartDate = new Date(newPeriodStart);
     newNextStartDate.setDate(newPeriodStart.getDate() + 14);
     
-    reportingPeriod = await prisma.reportingPeriod.update({
-      where: { id: 1 },
-      data: {
-        periodStart: newPeriodStart,
-        nextStartDate: newNextStartDate
-      }
-    });
+    // Format dates as YYYY-MM-DD for storage
+    const newPeriodStartStr = formatDateOnly(newPeriodStart);
+    const newNextStartDateStr = formatDateOnly(newNextStartDate);
+    
+    // Update settings
+    await prisma.$executeRaw`
+      UPDATE "Setting" 
+      SET value = ${newPeriodStartStr}, "updatedAt" = CURRENT_TIMESTAMP 
+      WHERE key = 'reportingPeriod_start'
+    `;
+    
+    await prisma.$executeRaw`
+      UPDATE "Setting" 
+      SET value = ${newNextStartDateStr}, "updatedAt" = CURRENT_TIMESTAMP 
+      WHERE key = 'reportingPeriod_nextStartDate'
+    `;
+    
+    periodStart = newPeriodStart;
   }
   
   // Calculate the period end (13 days after period start)
-  const periodEnd = new Date(reportingPeriod.periodStart);
-  periodEnd.setDate(reportingPeriod.periodStart.getDate() + 13);
+  const periodEnd = new Date(periodStart);
+  periodEnd.setDate(periodStart.getDate() + 13);
   periodEnd.setHours(23, 59, 59, 999);
   
   return { 
-    periodStart: reportingPeriod.periodStart, 
+    periodStart, 
     periodEnd 
   };
+}
+
+/**
+ * Formats a date object to YYYY-MM-DD string format
+ * @param date - The date to format
+ */
+function formatDateOnly(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
+
+/**
+ * Parses a YYYY-MM-DD string to a Date object
+ * @param dateStr - The date string to parse
+ */
+function parseDateOnly(dateStr: string): Date {
+  const date = new Date(dateStr);
+  date.setHours(0, 0, 0, 0);
+  return date;
 }
