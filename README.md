@@ -38,143 +38,42 @@ An open-source task tracking tool designed to help individuals and teams log dai
 ## Setup and Installation
 
 ### Prerequisites
-- Docker and Docker Compose
+- Docker and Docker Compose (or install Docker Desktop at https://www.docker.com/products/docker-desktop/)
 - LM Studio (for local AI processing) or OpenAI API key (for cloud AI processing)
 
-### Docker Setup (Recommended)
+### Docker Setup
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/reginabally/task-tracker.git
-   cd task-tracker
-   ```
+> ⚠️ **Important:** Docker Desktop must be running before you start the app.
 
-2. **Configure environment variables**
-   ```bash
-   cp .env.sample .env
-   ```
-   Edit the `.env` file if needed to customize your setup.
+1. **Download the release package**
 
-3. **Build and start the Docker containers**
-   ```bash
-   docker-compose up -d
-   ```
-   This will build the Docker image and start the application in detached mode.
+   Download the latest release ZIP from [Task Tracker Releases](https://github.com/reginabally/task-tracker/releases) and extract it to your preferred location.
 
-4. **Access the application**
+2. **Build and start the Docker containers**
+
+   - Make sure the Docker Desktop app is running
+   - Click the `Task Tracker.app` inside the extracted folder to launch the app
+   > ℹ️ You do not need to run any Docker commands manually — everything is handled by the Task Tracker app launcher.
+   - Wait for a few minutes for the build process to complete on first launch
+   - The Docker container is started when you see the last line is something like `✓ Ready in 326ms`
+
+3. **Access the application**
    
    Open [http://localhost:3000](http://localhost:3000) in your browser. You will be automatically redirected to the /tasks page.
 
-5. **Configure AI Integration**
+4. **Configure AI Integration**
 
    For **LM Studio** (local AI, default option):
    - Install LM Studio from [lmstudio.ai](https://lmstudio.ai)
+   - Download an AI model in LM Studio (e.g., `meta-llama-3.1-8b-instruct`)
    - Launch LM Studio and start the local server
    - Ensure LM Studio is accessible from the Docker container (adjust network settings if needed)
-   - The default endpoint is set to `http://host.docker.internal:1234/v1/chat/completions` for Mac/Windows or `http://172.17.0.1:1234/v1/chat/completions` for Linux
+   - The default endpoint is set to `http://localhost:1234/v1/chat/completions` and is already stored in the database
 
    For **OpenAI** (cloud AI):
    - Launch the application and navigate to Settings → AI Config
    - Enter your OpenAI API key in the provided field and click Save
    - Your API key will be stored securely in the database
-
-### Manual Setup (Alternative)
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/reginabally/task-tracker.git
-   cd task-tracker
-   ```
-
-2. **Install required packages**
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
-
-3. **Setup the database**
-   
-   First, rename the `.env.sample` file to `.env`.
-
-   Finally, run:
-   ```bash
-   npx prisma generate
-   npx prisma migrate dev --name init
-   ```
-
-4. **Import seed data**
-
-   Review and edit the seed data for task types and tags in `/prisma/seed.ts` if needed.
-
-   Then run:
-   ```bash
-   npx prisma db seed
-   ```
-
-   This will populate the database with task types, tags, and initialize the reporting period.
-
-5. **Configure AI Integration**
-
-   Follow the AI integration steps from the Docker setup above.
-
-6. **Build and run the server**
-   
-   For development:
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   ```
-
-   For production:
-   ```bash
-   npm run build
-   npm start
-   # or
-   yarn build
-   yarn start
-   ```
-
-7. **Access the application**
-   
-   Open [http://localhost:3000](http://localhost:3000) in your browser. You will be automatically redirected to the /tasks page.
-
-## Docker Management
-
-### Viewing Logs
-```bash
-docker-compose logs -f
-```
-
-### Stopping the Application
-```bash
-docker-compose down
-```
-
-### Restarting the Application
-```bash
-docker-compose restart
-```
-
-### Updating to a New Version
-```bash
-git pull
-docker-compose down
-docker-compose build
-docker-compose up -d
-```
-
-### Database Persistence
-The SQLite database is stored in a Docker volume to ensure data persistence across container restarts. To backup your data:
-
-```bash
-# Find the volume name
-docker volume ls
-
-# Create a backup
-docker run --rm -v task-tracker_db-data:/data -v $(pwd):/backup alpine tar -czvf /backup/db-backup.tar.gz -C /data .
-```
 
 ## Usage
 
@@ -212,6 +111,7 @@ docker run --rm -v task-tracker_db-data:/data -v $(pwd):/backup alpine tar -czvf
    - **Categories:** Manage task categories (add, edit, delete, and reorder)
    - **Tags:** Organize and manage tags for task categorization
    - **Automation:** Create and manage task automation rules
+   - **AI Config:** Manage API keys and AI API endpoints.
 
 7. **Task Automation Rules:**
    - Set up patterns to automatically assign categories and tags when they appear in task descriptions or links
