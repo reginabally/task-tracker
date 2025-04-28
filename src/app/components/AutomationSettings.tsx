@@ -96,6 +96,7 @@ export default function AutomationSettings() {
       let result;
       
       // Create a clean rule object without the tempId property for server actions
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { tempId, ...cleanRule } = rule;
       
       if (rule.id) {
