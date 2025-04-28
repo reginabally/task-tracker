@@ -74,8 +74,8 @@ services:
     build: .
     ports:
       - "3000:3000"
-    env_file:
-      - .env
+    environment:
+      - DATABASE_URL=file:/app/prisma/production.db
 
     # =====================================================
     # DEVELOPMENT MODE CONFIGURATION
@@ -157,8 +157,8 @@ services:
     build: .
     ports:
       - "3000:3000"
-    env_file:
-      - .env
+    environment:
+      - DATABASE_URL=file:/app/prisma/production.db
 
     # =====================================================
     # DEVELOPMENT MODE CONFIGURATION
@@ -186,4 +186,4 @@ fi
 echo "Configuration updated. Please rebuild your Docker containers:"
 echo "  docker compose down"
 echo "  docker compose build"
-echo "  docker compose up" 
+echo "  docker compose up"
