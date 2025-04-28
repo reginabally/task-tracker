@@ -57,3 +57,12 @@ next-env.d.ts
 # Cursor
 .cursorrules
 .cursor/rules/*
+tasks/tasks.md
+
+# Backup files
+*bak
+
+# Other files
+switch-mode.sh
+Task Tracker.app
+start.command
