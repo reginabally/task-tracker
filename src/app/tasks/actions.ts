@@ -304,12 +304,14 @@ export async function getLockedReportingPeriodAction(): Promise<{ periodStart: D
     `;
     
     periodStart = newPeriodStart;
+    nextStartDate = newNextStartDate;
   }
   
-  // Calculate the period end (13 days after period start)
-  const periodEnd = new Date(periodStart);
-  periodEnd.setDate(periodStart.getDate() + 13);
-  periodEnd.setHours(23, 59, 59, 999);
+  // Calculate the period end as 1 day before the next start date
+  const periodEnd = new Date(nextStartDate);
+  periodEnd.setDate(periodEnd.getDate() - 1);
+  // Set time to start of day instead of end of day for proper display in date inputs
+  periodEnd.setHours(0, 0, 0, 0);
   
   return { 
     periodStart, 
